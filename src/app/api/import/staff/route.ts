@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient();
 
-    const { data, error } = await supabase.rpc("import_staff", {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).rpc("import_staff", {
       p_rows: rows,
       p_airport_id: airportId,
     });

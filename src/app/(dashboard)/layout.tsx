@@ -9,17 +9,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from("profiles")
     .select("full_name, role")
     .eq("id", user.id)
     .single();
+  const profile = rawProfile as { full_name: string | null; role: string | null } | null;
 
   return (
     <AppShell
-      userEmail={user.email}
-      userName={profile?.full_name ?? user.email}
-      userRole={ROLE_LABELS[profile?.role ?? ""] ?? profile?.role}
+      userEmail={user.email ?? ""}
+      userName={profile?.full_name ?? user.email ?? ""}
+      userRole={ROLE_LABELS[profile?.role ?? ""] ?? profile?.role ?? ""}
     >
       {children}
     </AppShell>

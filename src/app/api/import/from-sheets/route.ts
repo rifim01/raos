@@ -99,8 +99,10 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     let result;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpc = (supabase as any).rpc.bind(supabase);
     if (data_type === "driver") {
-      const { data, error } = await supabase.rpc("import_drivers", {
+      const { data, error } = await rpc("import_drivers", {
         p_rows: rows,
         p_airport_id: airportId,
         p_type: driver_type,
@@ -110,7 +112,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Staff bisa multi-bandara, group by airport code dalam data
       if (airportId) {
-        const { data, error } = await supabase.rpc("import_staff", {
+        const { data, error } = await rpc("import_staff", {
           p_rows: rows,
           p_airport_id: airportId,
         });
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest) {
         for (const [code, codeRows] of Object.entries(byAirport)) {
           const aid = AIRPORT_CODES[code];
           if (!aid) continue;
-          const { data, error } = await supabase.rpc("import_staff", {
+          const { data, error } = await rpc("import_staff", {
             p_rows: codeRows,
             p_airport_id: aid,
           });

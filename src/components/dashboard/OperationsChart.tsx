@@ -62,7 +62,7 @@ export function RevenueChart() {
           <XAxis dataKey="bulan" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
           <YAxis tickFormatter={(v) => IDR(v)} tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
           <Tooltip
-            formatter={(v: number) => IDR(v)}
+            formatter={(v: unknown) => IDR(v as number)}
             contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12 }}
           />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
