@@ -129,8 +129,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
     <aside className="gradient-sidebar h-full flex flex-col" style={{ width: "var(--sidebar-width)" }}>
       {/* Logo */}
       <div className="px-6 py-5 border-b border-white/10 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-black text-sm">RI</span>
+        <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+          <img src="/icons/icon-512.png" alt="RIFIM" className="w-full h-full object-cover" />
         </div>
         <div>
           <p className="text-white font-black text-sm leading-tight">RIFIM</p>
