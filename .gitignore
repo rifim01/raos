@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+
+# sensitive credentials / generated files
+google-service-account.json
+radms-rifim-4e17e61bcbbb.json
+migration_report.json
+.claude/
+
+# migration logs
+scripts/logs/

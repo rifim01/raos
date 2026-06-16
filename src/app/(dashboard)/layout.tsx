@@ -1,26 +1,20 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
 import { ROLE_LABELS } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
-
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("full_name, role")
-    .eq("id", user.id)
-    .single();
-  const profile = rawProfile as { full_name: string | null; role: string | null } | null;
 
   return (
     <AppShell
       userEmail={user.email ?? ""}
-      userName={profile?.full_name ?? user.email ?? ""}
-      userRole={ROLE_LABELS[profile?.role ?? ""] ?? profile?.role ?? ""}
+      userName={user.full_name ?? user.email ?? ""}
+      userRole={ROLE_LABELS[user.role] ?? user.role}
+      userRoleLevel={user.role_level}
+      airportId={user.airport_id}
+      airportCode={user.airport_code}
     >
       {children}
     </AppShell>

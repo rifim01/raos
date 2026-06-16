@@ -10,28 +10,46 @@ interface AppShellProps {
   userEmail?: string;
   userName?: string;
   userRole?: string;
+  userRoleLevel?: number;
+  airportId?: string | null;
+  airportCode?: string | null;
 }
 
-export default function AppShell({ children, userEmail, userName, userRole }: AppShellProps) {
+export default function AppShell({
+  children,
+  userEmail,
+  userName,
+  userRole,
+  userRoleLevel,
+  airportId,
+  airportCode,
+}: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedAirport, setSelectedAirport] = useState("ALL");
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#F5F7FA]">
+    <div className="flex h-full overflow-hidden" style={{ background: "var(--bg-primary)" }}>
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex flex-shrink-0">
-        <Sidebar />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+          userRoleLevel={userRoleLevel}
+          airportCode={airportCode}
+        />
       </div>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <div className="relative z-50 flex-shrink-0">
-            <Sidebar onClose={() => setSidebarOpen(false)} />
+            <Sidebar
+              onClose={() => setSidebarOpen(false)}
+              userRoleLevel={userRoleLevel}
+              airportCode={airportCode}
+            />
           </div>
         </div>
       )}
@@ -47,7 +65,7 @@ export default function AppShell({ children, userEmail, userName, userRole }: Ap
           onAirportChange={setSelectedAirport}
         />
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <div className="p-4 lg:p-6 max-w-[1600px] mx-auto animate-slide-up">
+          <div className="p-4 lg:p-6 max-w-[1600px] mx-auto animate-fade-in">
             {children}
           </div>
         </main>

@@ -1,190 +1,189 @@
-"use client";
-
-import { useState } from "react";
+import { redirect } from "next/navigation";
+import { getCurrentUser, hasMinRole } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
-const INCOME = [
-  { date: "2025-06-01", category: "Jasa Angkutan", amount: 45000000, source: "BTH001", desc: "Pendapatan jasa antar terminal" },
-  { date: "2025-06-02", category: "Pendapatan External", amount: 12000000, source: "BTH001", desc: "Driver external Batam" },
-  { date: "2025-06-03", category: "Jasa Angkutan", amount: 38000000, source: "UPG001", desc: "Pendapatan harian Makassar" },
-  { date: "2025-06-04", category: "Komisi", amount: 8500000, source: "PKU001", desc: "Komisi mitra Pekanbaru" },
-];
+export const dynamic = "force-dynamic";
 
-const EXPENSE = [
-  { date: "2025-06-01", category: "Operasional", amount: 8000000, vendor: "Pertamina", desc: "BBM kendaraan operasional" },
-  { date: "2025-06-02", category: "Gaji", amount: 45000000, vendor: "Staff", desc: "Payroll Juni BTH001" },
-  { date: "2025-06-03", category: "Perawatan", amount: 3500000, vendor: "Bengkel", desc: "Service kendaraan" },
-];
+export default async function FinancePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (!hasMinRole(user, "AIRPORT_COORDINATOR")) redirect("/");
 
-export default function FinancePage() {
-  const [activeTab, setActiveTab] = useState<"overview" | "income" | "expense" | "bills">("overview");
+  const supabase = await createClient();
+  const now = new Date();
+  const bulan = now.getMonth() + 1;
+  const tahun = now.getFullYear();
+  const today = now.toISOString().split("T")[0];
+  const monthStart = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
+  const monthEnd = bulan === 12
+    ? `${tahun + 1}-01-01`
+    : `${tahun}-${String(bulan + 1).padStart(2, "0")}-01`;
 
-  const totalIncome = INCOME.reduce((s, i) => s + i.amount, 0);
-  const totalExpense = EXPENSE.reduce((s, e) => s + e.amount, 0);
-  const profit = totalIncome - totalExpense;
+  const isDirector = hasMinRole(user, "DIRECTOR");
+
+  let airportFilter: string[] = [];
+  if (isDirector) {
+    const { data: airports } = await (supabase as any)
+      .from("airports").select("id").in("code", ["DJB001","PKU001","BTH001","BPN001","MDC001","UPG001"]);
+    airportFilter = (airports ?? []).map((a: { id: string }) => a.id);
+  } else if (user.airport_id) {
+    airportFilter = [user.airport_id];
+  }
+
+  const applyFilter = (q: any) =>
+    airportFilter.length === 1 ? q.eq("airport_id", airportFilter[0])
+    : airportFilter.length > 1 ? q.in("airport_id", airportFilter)
+    : q;
+
+  const [
+    { data: masukData },
+    { data: keluarData },
+    { data: payrollData },
+    { data: extData },
+    { data: bills },
+    { data: recentTx },
+  ] = await Promise.all([
+    applyFilter((supabase as any).from("finance_transactions").select("nominal").eq("jenis","PEMASUKAN").gte("tanggal", monthStart).lt("tanggal", monthEnd)),
+    applyFilter((supabase as any).from("finance_transactions").select("nominal").eq("jenis","PENGELUARAN").gte("tanggal", monthStart).lt("tanggal", monthEnd)),
+    applyFilter((supabase as any).from("payroll").select("gaji_bersih").eq("periode_bulan", bulan).eq("periode_tahun", tahun).in("status",["APPROVED","PAID"])),
+    applyFilter((supabase as any).from("finance_external_income").select("nominal").gte("tanggal", monthStart).lt("tanggal", monthEnd)),
+    applyFilter((supabase as any).from("finance_bills").select("id,vendor,invoice_number,jumlah,jatuh_tempo,status,airports(code,city)").in("status",["UNPAID","OVERDUE"]).order("jatuh_tempo").limit(10)),
+    applyFilter((supabase as any).from("finance_transactions").select("id,jenis,kategori,nominal,keterangan,tanggal,airports(code,city)").order("created_at",{ascending:false}).limit(10)),
+  ]);
+
+  const sum = (rows: any[], key: string) => (rows ?? []).reduce((a: number, r: any) => a + Number(r[key] ?? 0), 0);
+
+  const pemasukan   = sum(masukData, "nominal");
+  const pengeluaran = sum(keluarData, "nominal");
+  const payroll     = sum(payrollData, "gaji_bersih");
+  const ext         = sum(extData, "nominal");
+  const profit      = pemasukan + ext - pengeluaran - payroll;
+
+  const overdueBills  = (bills ?? []).filter((b: any) => b.jatuh_tempo < today);
+  const monthName = now.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+
+  const STATUS_BILL: Record<string, string> = {
+    UNPAID:   "bg-yellow-100 text-yellow-700",
+    OVERDUE:  "bg-red-100 text-red-700",
+    PAID:     "bg-green-100 text-green-700",
+    DISPUTED: "bg-gray-100 text-gray-500",
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-black text-gray-800">Finance Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Pemasukan, pengeluaran, tagihan, dan laporan keuangan</p>
+          <h1 className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>Finance</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+            {isDirector ? "Nasional" : user.airport_code} · {monthName}
+          </p>
         </div>
-        <button className="flex items-center gap-2 bg-[#1565C0] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#0D47A1] transition-colors">
-          + Transaksi Baru
-        </button>
+        <Link href="/payroll" className="px-4 py-2 rounded-xl bg-[#1565C0] text-white text-sm font-bold hover:bg-[#1976D2] transition-colors">
+          Payroll
+        </Link>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         {[
-          { label: "Total Pemasukan", value: formatCurrency(totalIncome), change: "+8.3%", color: "text-green-700", bg: "from-green-500 to-emerald-600", icon: "↑" },
-          { label: "Total Pengeluaran", value: formatCurrency(totalExpense), change: "-2.1%", color: "text-red-400", bg: "from-red-500 to-rose-600", icon: "↓" },
-          { label: "Profit Bersih", value: formatCurrency(profit), change: "+12.5%", color: "text-yellow-300", bg: "from-[#1565C0] to-blue-700", icon: "=" },
+          { label: "Pendapatan",     value: pemasukan,   color: "text-green-700",  bg: "bg-green-50",  icon: "M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" },
+          { label: "Pengeluaran",    value: pengeluaran, color: "text-red-700",    bg: "bg-red-50",    icon: "M20 12H4M4 12l6-6M4 12l6 6" },
+          { label: "Total Payroll",  value: payroll,     color: "text-blue-700",   bg: "bg-blue-50",   icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" },
+          { label: "Pendapatan Ext", value: ext,         color: "text-purple-700", bg: "bg-purple-50", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
+          { label: profit >= 0 ? "Profit" : "Rugi", value: Math.abs(profit), color: profit >= 0 ? "text-green-700" : "text-red-700", bg: profit >= 0 ? "bg-green-50" : "bg-red-50", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
         ].map((s) => (
-          <div key={s.label} className={`bg-gradient-to-br ${s.bg} rounded-2xl p-5 text-white shadow-lg`}>
-            <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">{s.label}</p>
-            <p className="text-2xl font-black mt-2">{s.value}</p>
-            <p className={`text-sm font-semibold mt-1 ${s.color}`}>{s.change} vs bulan lalu</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {[
-          { key: "overview", label: "Overview" },
-          { key: "income", label: "Pemasukan" },
-          { key: "expense", label: "Pengeluaran" },
-          { key: "bills", label: "Tagihan" },
-        ].map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key as any)}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
-              activeTab === t.key ? "border-[#1565C0] text-[#1565C0]" : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Income breakdown */}
-          <div className="bg-white rounded-2xl card-shadow border border-gray-100 p-5">
-            <h3 className="font-bold text-gray-800 mb-4">Pemasukan per Kategori</h3>
-            <div className="space-y-3">
-              {[
-                { cat: "Jasa Angkutan", amount: 83000000, pct: 62 },
-                { cat: "Pendapatan External", amount: 24000000, pct: 18 },
-                { cat: "Komisi", amount: 16500000, pct: 12 },
-                { cat: "Lainnya", amount: 10800000, pct: 8 },
-              ].map((c) => (
-                <div key={c.cat}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{c.cat}</span>
-                    <span className="text-sm font-bold text-gray-800">{formatCurrency(c.amount)}</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full">
-                    <div className="h-full bg-[#1565C0] rounded-full" style={{ width: `${c.pct}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Expense breakdown */}
-          <div className="bg-white rounded-2xl card-shadow border border-gray-100 p-5">
-            <h3 className="font-bold text-gray-800 mb-4">Pengeluaran per Kategori</h3>
-            <div className="space-y-3">
-              {[
-                { cat: "Gaji & HR", amount: 45000000, pct: 55 },
-                { cat: "Operasional", amount: 22000000, pct: 27 },
-                { cat: "Perawatan", amount: 10000000, pct: 12 },
-                { cat: "Lainnya", amount: 5000000, pct: 6 },
-              ].map((c) => (
-                <div key={c.cat}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{c.cat}</span>
-                    <span className="text-sm font-bold text-gray-800">{formatCurrency(c.amount)}</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full">
-                    <div className="h-full bg-[#E53935] rounded-full" style={{ width: `${c.pct}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {(activeTab === "income" || activeTab === "expense") && (
-        <div className="bg-white rounded-2xl card-shadow border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <p className="font-semibold text-sm text-gray-700">{activeTab === "income" ? "Daftar Pemasukan" : "Daftar Pengeluaran"}</p>
-            <button className={`flex items-center gap-2 text-white px-3 py-1.5 rounded-lg text-sm font-semibold ${activeTab === "income" ? "bg-green-600" : "bg-red-600"}`}>
-              + {activeTab === "income" ? "Pemasukan" : "Pengeluaran"}
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  {["Tanggal", "Kategori", "Jumlah", activeTab === "income" ? "Sumber" : "Vendor", "Keterangan"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 text-left">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {(activeTab === "income" ? INCOME : EXPENSE).map((item, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-500">{item.date}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${activeTab === "income" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                        {item.category}
-                      </span>
-                    </td>
-                    <td className={`px-4 py-3 font-bold ${activeTab === "income" ? "text-green-700" : "text-red-600"}`}>
-                      {activeTab === "income" ? "+" : "-"}{formatCurrency(item.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{activeTab === "income" ? (item as any).source : (item as any).vendor}</td>
-                    <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{item.desc}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "bills" && (
-        <div className="bg-white rounded-2xl card-shadow border border-gray-100 p-5">
-          <h3 className="font-bold text-gray-800 mb-4">Tagihan Tertunda</h3>
-          <div className="space-y-3">
-            {[
-              { title: "Sewa Gedung Operasional BTH001", amount: 12000000, due: "2025-06-30", status: "UNPAID" },
-              { title: "Langganan GPS Tracker", amount: 2500000, due: "2025-06-15", status: "UNPAID" },
-              { title: "Listrik Kantor UPG001", amount: 1800000, due: "2025-06-20", status: "PAID" },
-              { title: "Internet & Komunikasi", amount: 800000, due: "2025-07-01", status: "UNPAID" },
-            ].map((b) => (
-              <div key={b.title} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <div>
-                  <p className="font-semibold text-sm text-gray-800">{b.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Jatuh tempo: {b.due}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <p className="font-bold text-gray-800">{formatCurrency(b.amount)}</p>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${b.status === "PAID" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{b.status}</span>
-                  {b.status === "UNPAID" && (
-                    <button className="text-xs font-bold text-white bg-[#1565C0] hover:bg-[#0D47A1] px-3 py-1.5 rounded-lg transition-colors">Bayar</button>
-                  )}
-                </div>
+          <div key={s.label} className={`${s.bg} rounded-2xl p-4`}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-4 h-4 ${s.color}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={s.icon} />
+                </svg>
               </div>
-            ))}
+              <p className="text-xs font-semibold text-gray-500">{s.label}</p>
+            </div>
+            <p className={`text-lg font-black ${s.color} leading-tight`}>{formatCurrency(s.value)}</p>
           </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Bills */}
+        <div className="bg-white rounded-2xl card-shadow border border-gray-100">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-gray-800">Tagihan Jatuh Tempo</h3>
+              <p className="text-xs text-gray-400 mt-0.5">{(bills ?? []).length} tagihan aktif</p>
+            </div>
+            {overdueBills.length > 0 && (
+              <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">
+                {overdueBills.length} OVERDUE
+              </span>
+            )}
+          </div>
+          {(bills ?? []).length === 0 ? (
+            <div className="py-10 text-center text-gray-400 text-sm">Tidak ada tagihan jatuh tempo</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {(bills ?? []).slice(0, 8).map((b: any) => (
+                <div key={b.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{b.vendor}</p>
+                    <p className="text-xs text-gray-400">{b.invoice_number} · {b.airports?.city ?? "—"}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-gray-800">{formatCurrency(Number(b.jumlah))}</p>
+                    <p className={`text-xs mt-0.5 ${b.jatuh_tempo < today ? "text-red-500" : "text-gray-400"}`}>
+                      {new Date(b.jatuh_tempo).toLocaleDateString("id-ID",{day:"numeric",month:"short"})}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_BILL[b.status]}`}>
+                    {b.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Recent transactions */}
+        <div className="bg-white rounded-2xl card-shadow border border-gray-100">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h3 className="font-bold text-gray-800">Transaksi Terbaru</h3>
+            <p className="text-xs text-gray-400 mt-0.5">10 transaksi terakhir</p>
+          </div>
+          {(recentTx ?? []).length === 0 ? (
+            <div className="py-10 text-center text-gray-400 text-sm">Belum ada transaksi</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {(recentTx ?? []).map((t: any) => (
+                <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${t.jenis === "PEMASUKAN" ? "bg-green-50" : "bg-red-50"}`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`w-4 h-4 ${t.jenis === "PEMASUKAN" ? "text-green-600" : "text-red-600"}`}>
+                      {t.jenis === "PEMASUKAN"
+                        ? <path d="M12 20V4M12 4l-4 4M12 4l4 4" />
+                        : <path d="M12 4v16M12 20l-4-4M12 20l4-4" />}
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{t.keterangan || t.kategori}</p>
+                    <p className="text-xs text-gray-400">{t.kategori} · {t.airports?.city ?? "—"}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-sm font-bold ${t.jenis === "PEMASUKAN" ? "text-green-700" : "text-red-700"}`}>
+                      {t.jenis === "PEMASUKAN" ? "+" : "-"}{formatCurrency(Number(t.nominal))}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(t.tanggal).toLocaleDateString("id-ID",{day:"numeric",month:"short"})}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -41,7 +41,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthPage = request.nextUrl.pathname.startsWith("/login");
+  const pathname = request.nextUrl.pathname;
+  const isAuthPage = pathname.startsWith("/login");
 
   if (!user && !isAuthPage) {
     const url = request.nextUrl.clone();
@@ -53,6 +54,16 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // RBAC: /admin requires SUPER_ADMIN (role_level 5 stored in app_metadata)
+  if (user && pathname.startsWith("/admin")) {
+    const roleLevel = (user.app_metadata?.role_level as number | undefined) ?? 0;
+    if (roleLevel < 5) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

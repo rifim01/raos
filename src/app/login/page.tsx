@@ -166,6 +166,14 @@ export default function LoginPage() {
               </div>
             )}
 
+            {mode === "login" && (
+              <div className="flex justify-end -mt-1">
+                <a href="/forgot-password" className="text-xs text-[#1565C0] hover:underline font-medium">
+                  Lupa Password?
+                </a>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}

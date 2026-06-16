@@ -1,9 +1,15 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import StaffDashboard from "@/components/dashboard/StaffDashboard";
+import DriverDashboard from "@/components/dashboard/DriverDashboard";
 import { createClient } from "@/lib/supabase/server";
 import KPICard from "@/components/dashboard/KPICard";
 import AirportMap from "@/components/dashboard/AirportMap";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import { DailyOpsChart, RevenueChart } from "@/components/dashboard/OperationsChart";
 import { formatCurrency } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 async function getDashboardStats() {
   try {
@@ -43,9 +49,7 @@ async function getDashboardStats() {
   }
 }
 
-export default async function DashboardPage() {
-  const stats = await getDashboardStats();
-
+function NationalDashboard({ stats }: { stats: Awaited<ReturnType<typeof getDashboardStats>> }) {
   const kpiCards = [
     {
       title: "Total Bandara",
@@ -66,7 +70,7 @@ export default async function DashboardPage() {
       title: "Driver Aktif",
       value: stats.activeDrivers,
       subtitle: "On duty hari ini",
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" strokeDasharray="4 2"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>,
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" strokeDasharray="4 2"/></svg>,
       color: "green" as const,
     },
     {
@@ -111,7 +115,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-gray-800">Dashboard Nasional</h1>
@@ -125,14 +128,12 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
         {kpiCards.map((card) => (
           <KPICard key={card.title} {...card} />
         ))}
       </div>
 
-      {/* Map + Activity */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
         <div className="xl:col-span-2">
           <AirportMap />
@@ -142,13 +143,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <DailyOpsChart />
         <RevenueChart />
       </div>
 
-      {/* Airport Status Table */}
       <div className="bg-white rounded-2xl card-shadow border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-100">
           <h3 className="font-bold text-gray-800">Status Bandara</h3>
@@ -203,4 +202,28 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  // DRIVER → personal driver dashboard
+  if (user.role_level === 1) {
+    return <DriverDashboard user={user} />;
+  }
+
+  // STAFF → personal staff dashboard
+  if (user.role_level === 2) {
+    return <StaffDashboard user={user} />;
+  }
+
+  // AIRPORT_COORDINATOR → redirect to their airport dashboard
+  if (user.role_level === 3 && user.airport_code) {
+    redirect(`/airports/${user.airport_code}`);
+  }
+
+  // DIRECTOR / SUPER_ADMIN → national dashboard
+  const stats = await getDashboardStats();
+  return <NationalDashboard stats={stats} />;
 }
