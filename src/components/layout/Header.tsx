@@ -51,7 +51,12 @@ export default function Header({ onMenuToggle, userEmail, userName, userRole, se
         </svg>
         <select
           value={selectedAirport}
-          onChange={e => onAirportChange?.(e.target.value)}
+          onChange={e => {
+            const val = e.target.value;
+            onAirportChange?.(val);
+            if (val !== "ALL") router.push(`/airports/${val}`);
+            else router.push("/");
+          }}
           className="text-xs font-semibold bg-transparent border-none focus:outline-none cursor-pointer text-white/80 max-w-[160px]"
         >
           <option value="ALL" className="bg-[#1E293B]">Semua Bandara</option>
@@ -80,14 +85,34 @@ export default function Header({ onMenuToggle, userEmail, userName, userRole, se
 
       <div className="flex-1" />
 
+      {/* Refresh button */}
+      <button
+        onClick={() => router.refresh()}
+        title="Refresh data"
+        className="p-2 rounded-xl hover:bg-white/5 text-white/40 hover:text-white/80 transition-colors"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
+
       {/* Search */}
       <div className="hidden md:flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 w-52 border border-white/8 focus-within:border-[#2563EB]/40 transition-colors">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-white/30 flex-shrink-0">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="text" placeholder="Cari driver, staff..."
-          className="bg-transparent text-xs text-white/70 placeholder-white/25 focus:outline-none flex-1" />
-        <kbd className="text-[9px] text-white/20 bg-white/5 px-1.5 py-0.5 rounded font-mono">/</kbd>
+        <input
+          type="text"
+          placeholder="Cari driver, staff..."
+          className="bg-transparent text-xs text-white/70 placeholder-white/25 focus:outline-none flex-1"
+          onKeyDown={e => {
+            if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+              router.push(`/drivers?q=${encodeURIComponent((e.target as HTMLInputElement).value.trim())}`);
+            }
+          }}
+        />
+        <kbd className="text-[9px] text-white/20 bg-white/5 px-1.5 py-0.5 rounded font-mono">↵</kbd>
       </div>
 
       {/* Notifications */}
