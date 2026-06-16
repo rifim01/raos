@@ -34,113 +34,152 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
-      {/* Background airport image */}
+
+      {/* === BACKGROUND LAYERS === */}
+
+      {/* Layer 1: airport photo */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/bg-airport.jpg')" }}
       />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0D47A1]/90 via-[#1565C0]/80 to-[#E53935]/70" />
 
-      {/* Decorative circles */}
-      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/2" />
+      {/* Layer 2: dark base so even without photo it looks good */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#03081a 0%,#0a1628 50%,#0d0510 100%)", opacity: 0.55 }} />
 
-      {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md mx-4 animate-slide-up">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/20">
-          {/* Logo & Title */}
-          <div className="text-center mb-6">
-            <div className="flex justify-center mb-4">
-              <img
-                src="/icons/icon-512.png"
-                alt="RIFIM Logo"
-                className="w-32 h-32 object-cover rounded-2xl shadow-lg"
-              />
-            </div>
-            <h1 className="text-[#1565C0] font-black text-xl tracking-wide">
-              RIFIM AIRPORT OPERATING SYSTEM
-            </h1>
-            <div className="mt-1 space-y-0.5">
-              <p className="text-[#E53935] font-bold text-xs tracking-widest">ONE PLATFORM. ALL AIRPORTS. FULL CONTROL.</p>
-            </div>
-          </div>
+      {/* Layer 3: color accent — lighter so photo shows through */}
+      <div className="absolute inset-0" style={{
+        background: "linear-gradient(160deg, rgba(13,71,161,0.55) 0%, rgba(21,101,192,0.35) 45%, rgba(183,28,28,0.40) 100%)"
+      }} />
 
-          {/* Mode Toggle — register hanya via Admin */}
-          <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
-            <button
-              className="flex-1 py-2 rounded-lg text-sm font-semibold bg-white text-[#1565C0] shadow-sm"
-            >
-              Masuk
-            </button>
-            <button
-              disabled
-              title="Pendaftaran akun dilakukan oleh Admin"
-              className="flex-1 py-2 rounded-lg text-sm font-semibold text-gray-300 cursor-not-allowed"
-            >
-              Daftar Akun
-            </button>
-          </div>
+      {/* Layer 4: animated runway lights strip at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)" }} />
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@rifim.co.id"
-                required
-                autoComplete="new-email"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1565C0] focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                autoComplete="new-password"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1565C0] focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
-              />
-            </div>
+      {/* Animated runway centerline dots */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center gap-6 pb-6 pointer-events-none">
+        {[0,1,2,3].map(i => (
+          <div key={i} className="w-1.5 h-8 rounded-full animate-pulse"
+            style={{ background: "rgba(255,255,255,0.5)", animationDelay: `${i*0.3}s` }} />
+        ))}
+      </div>
 
-            {error && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
-                {error}
+      {/* Side accent lights */}
+      <div className="absolute left-0 top-1/4 w-48 h-48 rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(21,101,192,0.25) 0%, transparent 70%)" }} />
+      <div className="absolute right-0 bottom-1/4 w-64 h-64 rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(229,57,53,0.20) 0%, transparent 70%)" }} />
+
+      {/* === LOGIN CARD === */}
+      <div className="relative z-10 w-full max-w-md mx-4">
+        {/* Glow ring behind card */}
+        <div className="absolute -inset-1 rounded-3xl opacity-40 blur-xl pointer-events-none"
+          style={{ background: "linear-gradient(135deg,#1565C0,#E53935)" }} />
+
+        <div className="relative bg-white/10 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+
+          {/* Top accent stripe */}
+          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg,#1565C0,#E53935)" }} />
+
+          <div className="px-8 pt-7 pb-8">
+            {/* Logo */}
+            <div className="flex justify-center mb-5">
+              <div className="relative">
+                <div className="absolute -inset-2 rounded-2xl blur-md opacity-60"
+                  style={{ background: "linear-gradient(135deg,#1565C0,#E53935)" }} />
+                <img
+                  src="/icons/icon-512.png"
+                  alt="RIFIM Logo"
+                  className="relative w-24 h-24 object-cover rounded-2xl shadow-2xl"
+                />
               </div>
-            )}
-            <div className="flex justify-end -mt-1">
-                <a href="/forgot-password" className="text-xs text-[#1565C0] hover:underline font-medium">
+            </div>
+
+            {/* Title */}
+            <div className="text-center mb-7">
+              <h1 className="font-black text-xl tracking-wide text-white drop-shadow-lg">
+                RIFIM AIRPORT OPERATING SYSTEM
+              </h1>
+              <p className="font-bold text-xs tracking-widest mt-1" style={{ color: "#EF5350" }}>
+                ONE PLATFORM. ALL AIRPORTS. FULL CONTROL.
+              </p>
+            </div>
+
+            {/* Tab (Masuk only, register disabled) */}
+            <div className="flex rounded-xl bg-white/5 border border-white/10 p-1 mb-6">
+              <button className="flex-1 py-2 rounded-lg text-sm font-semibold bg-white/20 text-white shadow-sm">
+                Masuk
+              </button>
+              <button disabled title="Pendaftaran akun dilakukan oleh Admin"
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white/25 cursor-not-allowed">
+                Daftar Akun
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
+              <div>
+                <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="admin@rifim.co.id"
+                  required
+                  autoComplete="new-email"
+                  className="w-full px-4 py-3 rounded-xl border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-[#1565C0] transition-all"
+                  style={{ background: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.12)" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 rounded-xl border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-[#1565C0] transition-all"
+                  style={{ background: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.12)" }}
+                />
+              </div>
+
+              {error && (
+                <div className="px-4 py-3 rounded-xl text-sm font-medium text-red-300 border border-red-500/30"
+                  style={{ background: "rgba(239,68,68,0.15)" }}>
+                  {error}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <a href="/forgot-password" className="text-xs font-medium hover:underline" style={{ color: "#60A5FA" }}>
                   Lupa Password?
                 </a>
               </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl font-bold text-white gradient-rifim hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-lg mt-2"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Masuk...
-                </span>
-              ) : "MASUK"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl font-black text-white text-sm tracking-wider transition-all active:scale-[0.98] disabled:opacity-60 shadow-lg mt-1"
+                style={{ background: "linear-gradient(90deg,#1565C0,#E53935)" }}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Masuk...
+                  </span>
+                ) : "MASUK"}
+              </button>
+            </form>
 
-          {/* Footer */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-400">PT RIFIM INTERNATIONAL GEMILANG</p>
-            <p className="text-xs text-gray-300 mt-0.5">© 2025 - 2026. All Rights Reserved.</p>
+            {/* Footer */}
+            <div className="mt-6 text-center border-t border-white/10 pt-5">
+              <p className="text-[11px] text-white/35 font-medium">PT RIFIM INTERNATIONAL GEMILANG</p>
+              <p className="text-[10px] text-white/20 mt-0.5">© 2025 - 2026. All Rights Reserved.</p>
+            </div>
           </div>
         </div>
       </div>
