@@ -1,11 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
-// Groq uses OpenAI-compatible API — only baseURL differs
-export const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY ?? "",
-  baseURL: "https://api.groq.com/openai/v1",
-});
+// Lazy init — prevents OpenAI SDK from throwing at Next.js build time when GROQ_API_KEY is absent
+let _groq: OpenAI | null = null;
+export function getGroqClient(): OpenAI {
+  if (!_groq) {
+    _groq = new OpenAI({
+      apiKey: process.env.GROQ_API_KEY || "not-configured",
+      baseURL: "https://api.groq.com/openai/v1",
+    });
+  }
+  return _groq;
+}
 
 export interface AIMessage {
   role: "user" | "assistant";

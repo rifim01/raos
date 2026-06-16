@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { groq, detectIntent, fetchLiveData, searchKnowledge, saveConversation } from "@/lib/ai-engine";
+import { getGroqClient, detectIntent, fetchLiveData, searchKnowledge, saveConversation } from "@/lib/ai-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,7 @@ PANDUAN RESPONS:
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const groqStream = await groq.chat.completions.create({
+        const groqStream = await getGroqClient().chat.completions.create({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "system", content: systemPrompt }, ...messages],
           temperature: 0.7,
