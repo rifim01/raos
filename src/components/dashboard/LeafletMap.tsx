@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Map as LeafletMap } from "leaflet";
+import type { Map as LMap } from "leaflet";
 
 interface Marker {
   code: string;
@@ -14,7 +14,7 @@ interface Props { markers: Marker[] }
 
 export default function LeafletMap({ markers }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
+  const mapRef = useRef<LMap | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
