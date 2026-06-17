@@ -37,37 +37,25 @@ export default function LoginPage() {
 
       {/* === BACKGROUND LAYERS === */}
 
-      {/* Layer 1: airport photo */}
+      {/* Layer 1: airport photo — full visibility */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/baground.png')" }}
       />
 
-      {/* Layer 2: dark base — reduced so airport scene shows through */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#03081a 0%,#0a1628 50%,#0d0510 100%)", opacity: 0.30 }} />
+      {/* Layer 2: subtle dark tint so card text stays readable */}
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.35)" }} />
 
-      {/* Layer 3: color accent */}
+      {/* Layer 3: subtle blue-red brand accent */}
       <div className="absolute inset-0" style={{
-        background: "linear-gradient(160deg, rgba(13,71,161,0.30) 0%, rgba(21,101,192,0.15) 45%, rgba(183,28,28,0.25) 100%)"
+        background: "linear-gradient(160deg, rgba(13,71,161,0.15) 0%, transparent 60%, rgba(183,28,28,0.12) 100%)"
       }} />
-
-      {/* Layer 4: animated runway lights strip at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)" }} />
-
-      {/* Animated runway centerline dots */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center gap-6 pb-6 pointer-events-none">
-        {[0,1,2,3].map(i => (
-          <div key={i} className="w-1.5 h-8 rounded-full animate-pulse"
-            style={{ background: "rgba(255,255,255,0.5)", animationDelay: `${i*0.3}s` }} />
-        ))}
-      </div>
 
       {/* Side accent lights */}
       <div className="absolute left-0 top-1/4 w-48 h-48 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(21,101,192,0.25) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(circle, rgba(21,101,192,0.18) 0%, transparent 70%)" }} />
       <div className="absolute right-0 bottom-1/4 w-64 h-64 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(229,57,53,0.20) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(circle, rgba(229,57,53,0.15) 0%, transparent 70%)" }} />
 
       {/* === LOGIN CARD === */}
       <div className="relative z-10 w-full max-w-md mx-4">
