@@ -216,6 +216,7 @@ export default function TrackingClient({ airports, initialLocations }: TrackingC
               locations={locations}
               airports={airports}
               selectedAirport={selectedAirport}
+              selectedDriverId={selectedDriver?.driver_id}
               onDriverClick={(loc) => setSelectedDriver(loc)}
             />
             {/* Yellow accent overlay badge */}
