@@ -4,82 +4,132 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+/* ─── icon wrapper ───────────────────────────────────────────────────────── */
+function SI({ children }: { children: React.ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"
+      width="20" height="20"
+    >
+      {children}
+    </svg>
+  );
+}
+
+/* ─── 5 quick-access tabs ────────────────────────────────────────────────── */
 const MOBILE_NAV = [
   {
-    label: "Home",
+    label: "Dashboard",
     href: "/",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-      </svg>
-    ),
-  },
-  {
-    label: "Driver",
-    href: "/drivers",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <path d="M19 17H5a2 2 0 01-2-2V9l3-6h12l3 6v6a2 2 0 01-2 2z" />
-        <circle cx="7.5" cy="17.5" r="1.5" /><circle cx="16.5" cy="17.5" r="1.5" /><path d="M5 9h14" />
-      </svg>
+      <SI>
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <path d="M9 22V12h6v10"/>
+      </SI>
     ),
   },
   {
     label: "Tracking",
     href: "/tracking",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <circle cx="12" cy="12" r="3" /><circle cx="12" cy="12" r="8" strokeDasharray="4 2" />
-        <line x1="12" y1="2" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="22" />
-        <line x1="2" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="22" y2="12" />
-      </svg>
+      <SI>
+        <path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/>
+        <path d="M4 6.1a10 10 0 1 0 14.9.97"/>
+        <path d="M12 12 4.93 4.93"/>
+        <circle cx="12" cy="12" r="2"/>
+      </SI>
     ),
   },
   {
-    label: "Staff",
-    href: "/staff",
+    label: "Pickup",
+    href: "/pickup",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-      </svg>
+      <SI>
+        <path d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0z"/>
+        <circle cx="12" cy="8" r="2"/>
+        <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2M20 12h2M18.66 6.34l-1.41 1.41"/>
+      </SI>
     ),
   },
   {
-    label: "Lainnya",
-    href: "/menu",
+    label: "Pelanggaran",
+    href: "/violations",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />
-      </svg>
+      <SI>
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+        <path d="M12 9v4"/>
+        <path d="M12 17h.01"/>
+      </SI>
+    ),
+  },
+  {
+    label: "Pengaturan",
+    href: "/settings",
+    icon: (
+      <SI>
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </SI>
     ),
   },
 ];
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FLOATING BOTTOM NAV
+══════════════════════════════════════════════════════════════════════════ */
 export default function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 glass border-t border-gray-200/60 z-50 safe-area-pb">
-      <div className="flex">
+    <nav
+      className="lg:hidden fixed z-50"
+      style={{ bottom: 16, left: 16, right: 16 }}
+    >
+      {/* Pill container */}
+      <div
+        className="flex items-center justify-around px-3 py-2 rounded-full"
+        style={{
+          background: "rgba(255, 255, 255, 0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          boxShadow: "0 8px 32px rgba(0,0,0,.14), 0 2px 8px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.05)",
+        }}
+      >
         {MOBILE_NAV.map((item) => {
-          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const isActive =
+            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors",
-                isActive ? "text-[#1565C0]" : "text-gray-400"
-              )}
+              className="flex flex-col items-center gap-0.5 select-none"
             >
-              <span className={cn(
-                "p-1 rounded-xl transition-all",
-                isActive ? "bg-[#1565C0]/10" : ""
-              )}>
+              {/* Icon container — yellow capsule when active */}
+              <span
+                className={cn(
+                  "flex items-center justify-center rounded-full transition-all duration-200",
+                  isActive
+                    ? "px-3.5 py-1.5 shadow-[0_2px_10px_rgba(255,211,0,.5)]"
+                    : "p-1.5"
+                )}
+                style={
+                  isActive
+                    ? { background: "#FFD300", color: "#000000" }
+                    : { color: "#94A3B8" }
+                }
+              >
                 {item.icon}
               </span>
-              {item.label}
+
+              {/* Label */}
+              <span
+                className="text-[9.5px] font-semibold leading-none tracking-tight"
+                style={{ color: isActive ? "#B8860B" : "#94A3B8" }}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}

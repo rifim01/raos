@@ -64,7 +64,7 @@ export default function AppShell({
           selectedAirport={selectedAirport}
           onAirportChange={setSelectedAirport}
         />
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-28 lg:pb-0">
           <div className="p-4 lg:p-6 max-w-[1600px] mx-auto animate-fade-in">
             {children}
           </div>
