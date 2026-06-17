@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -14,7 +16,7 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!supabaseConfigured) {
-      setError("Supabase belum dikonfigurasi. Isi .env.local terlebih dahulu.");
+      setError("Supabase belum dikonfigurasi.");
       return;
     }
     setLoading(true);
@@ -22,9 +24,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message === "Invalid login credentials"
-        ? "Email atau password salah"
-        : error.message);
+      setError(error.message === "Invalid login credentials" ? "Email atau password salah" : error.message);
       setLoading(false);
     } else {
       router.push("/");
@@ -33,148 +33,100 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden"
-      style={{ backgroundColor: "#0A1628" }}>
+    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+      <style>{`
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .raos-panel { animation: float 4s ease-in-out infinite; }
+        .raos-fadein { animation: fadeUp 0.7s ease-out forwards; }
+        .raos-input:focus { border-color: #FFD400 !important; box-shadow: 0 0 0 3px rgba(255,212,0,0.25), 0 0 20px rgba(255,212,0,0.4) !important; outline: none; }
+        .raos-input::placeholder { color: rgba(255,255,255,0.35); }
+        .raos-input:-webkit-autofill { -webkit-box-shadow: 0 0 0px 1000px rgba(10,18,45,0.9) inset !important; -webkit-text-fill-color: #fff !important; }
+        .raos-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,212,0,0.5) !important; background: #FFE033 !important; }
+        .raos-forgot:hover { color: #FFD400 !important; }
+      `}</style>
 
-      {/* === BACKGROUND LAYERS === */}
+      {/* BG */}
+      <div style={{ position:"absolute", inset:0, backgroundImage:"url('/bg-airport.jpg')", backgroundSize:"cover", backgroundPosition:"center 30%", zIndex:0 }} />
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(255,212,0,0.55) 0%,rgba(180,120,0,0.50) 40%,rgba(80,40,0,0.65) 100%)", zIndex:1 }} />
+      <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.35)", backdropFilter:"blur(2px)", WebkitBackdropFilter:"blur(2px)", zIndex:2 }} />
 
-      {/* Layer 1: airport photo — full visibility */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/baground.png')", backgroundSize: "cover", backgroundPosition: "center" }}
-      />
-      {/* Layer 1b: fallback gradient if image fails to load */}
-      <div className="absolute inset-0" style={{
-        background: "linear-gradient(160deg, #0D2B55 0%, #0A1628 40%, #1A0A2E 100%)",
-        zIndex: -1,
-      }} />
+      {/* HEADER BRAND */}
+      <div style={{ position:"absolute", top:30, right:40, zIndex:100, display:"flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.97)", borderRadius:12, padding:"8px 20px 8px 12px", boxShadow:"0 4px 24px rgba(0,0,0,0.18)", height:60 }}>
+        <Image src="/icons/icon-512.png" alt="RIFIM" width={36} height={36} style={{ objectFit:"contain", borderRadius:"50%" }} />
+        <div style={{ width:1, height:36, background:"rgba(0,0,0,0.12)", margin:"0 8px" }} />
+        <span style={{ fontSize:28, fontWeight:900, color:"#1a1a1a", letterSpacing:"-1.5px", lineHeight:1, fontFamily:"'Arial Black', Arial, sans-serif" }}>
+          m<span style={{ color:"#e53935" }}>a</span>xim
+        </span>
+      </div>
 
-      {/* Layer 2: subtle dark tint so card text stays readable */}
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.35)" }} />
+      {/* GLASS PANEL */}
+      <div className="raos-panel raos-fadein" style={{ position:"relative", zIndex:10, width:420, background:"rgba(5,10,25,0.62)", backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:20, boxShadow:"0 20px 60px rgba(0,0,0,0.40), 0 0 40px rgba(255,212,0,0.18)", padding:"44px 40px 40px", display:"flex", flexDirection:"column", alignItems:"center" }}>
+        
+        {/* LOGO */}
+        <div style={{ marginBottom:20, filter:"drop-shadow(0 0 20px rgba(255,212,0,0.55))" }}>
+          <Image src="/icons/icon-512.png" alt="PT Menala Internasional Gemilang" width={120} height={120} style={{ objectFit:"contain", borderRadius:"50%" }} />
+        </div>
 
-      {/* Layer 3: subtle blue-red brand accent */}
-      <div className="absolute inset-0" style={{
-        background: "linear-gradient(160deg, rgba(13,71,161,0.15) 0%, transparent 60%, rgba(183,28,28,0.12) 100%)"
-      }} />
+        {/* TITLE */}
+        <h1 style={{ fontSize:24, fontWeight:800, letterSpacing:1, textTransform:"uppercase", color:"#fff", textAlign:"center", lineHeight:1.25, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
+          RIFIM AIRPORT<br />OPERATING SYSTEM
+        </h1>
+        <p style={{ color:"#FFD400", fontSize:10, fontWeight:600, letterSpacing:2.5, textTransform:"uppercase", textAlign:"center", marginBottom:32, whiteSpace:"nowrap", textShadow:"0 1px 4px rgba(0,0,0,0.5)" }}>
+          ONE PLATFORM. ALL AIRPORTS. FULL CONTROL.
+        </p>
 
-      {/* Side accent lights */}
-      <div className="absolute left-0 top-1/4 w-48 h-48 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(21,101,192,0.18) 0%, transparent 70%)" }} />
-      <div className="absolute right-0 bottom-1/4 w-64 h-64 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(229,57,53,0.15) 0%, transparent 70%)" }} />
+        {/* ERROR */}
+        {error && (
+          <div style={{ width:"100%", background:"rgba(220,38,38,0.15)", border:"1px solid rgba(220,38,38,0.4)", borderRadius:10, color:"#fca5a5", fontSize:13, padding:"10px 14px", marginBottom:16, textAlign:"center" }}>
+            {error}
+          </div>
+        )}
 
-      {/* === LOGIN CARD === */}
-      <div className="relative z-10 w-full max-w-md mx-4">
-        {/* Glow ring behind card */}
-        <div className="absolute -inset-1 rounded-3xl opacity-40 blur-xl pointer-events-none"
-          style={{ background: "linear-gradient(135deg,#1565C0,#E53935)" }} />
-
-        <div className="relative bg-white/10 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
-
-          {/* Top accent stripe */}
-          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg,#1565C0,#E53935)" }} />
-
-          <div className="px-8 pt-7 pb-8">
-            {/* Logo */}
-            <div className="flex justify-center mb-5">
-              <div className="relative">
-                <div className="absolute -inset-2 rounded-2xl blur-md opacity-60"
-                  style={{ background: "linear-gradient(135deg,#1565C0,#E53935)" }} />
-                <img
-                  src="/icons/icon-512.png"
-                  alt="RIFIM Logo"
-                  className="relative w-24 h-24 object-cover rounded-2xl shadow-2xl"
-                />
-              </div>
-            </div>
-
-            {/* Title */}
-            <div className="text-center mb-7">
-              <h1 className="font-black text-xl tracking-wide text-white drop-shadow-lg">
-                RIFIM AIRPORT OPERATING SYSTEM
-              </h1>
-              <p className="font-bold text-xs tracking-widest mt-1" style={{ color: "#EF5350" }}>
-                ONE PLATFORM. ALL AIRPORTS. FULL CONTROL.
-              </p>
-            </div>
-
-            {/* Tab (Masuk only, register disabled) */}
-            <div className="flex rounded-xl bg-white/5 border border-white/10 p-1 mb-6">
-              <button className="flex-1 py-2 rounded-lg text-sm font-semibold bg-white/20 text-white shadow-sm">
-                Masuk
-              </button>
-              <button disabled title="Pendaftaran akun dilakukan oleh Admin"
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white/25 cursor-not-allowed">
-                Daftar Akun
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
-              <div>
-                <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@rifim.co.id"
-                  required
-                  autoComplete="new-email"
-                  className="w-full px-4 py-3 rounded-xl border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-[#1565C0] transition-all"
-                  style={{ background: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.12)" }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  autoComplete="new-password"
-                  className="w-full px-4 py-3 rounded-xl border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-[#1565C0] transition-all"
-                  style={{ background: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.12)" }}
-                />
-              </div>
-
-              {error && (
-                <div className="px-4 py-3 rounded-xl text-sm font-medium text-red-300 border border-red-500/30"
-                  style={{ background: "rgba(239,68,68,0.15)" }}>
-                  {error}
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <a href="/forgot-password" className="text-xs font-medium hover:underline" style={{ color: "#60A5FA" }}>
-                  Lupa Password?
-                </a>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl font-black text-white text-sm tracking-wider transition-all active:scale-[0.98] disabled:opacity-60 shadow-lg mt-1"
-                style={{ background: "linear-gradient(90deg,#1565C0,#E53935)" }}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                    Masuk...
-                  </span>
-                ) : "MASUK"}
-              </button>
-            </form>
-
-            {/* Footer */}
-            <div className="mt-6 text-center border-t border-white/10 pt-5">
-              <p className="text-[11px] text-white/35 font-medium">PT RIFIM INTERNATIONAL GEMILANG</p>
-              <p className="text-[10px] text-white/20 mt-0.5">© 2025 - 2026. All Rights Reserved.</p>
+        {/* FORM */}
+        <form onSubmit={handleLogin} style={{ width:"100%", display:"flex", flexDirection:"column" }} autoComplete="off">
+          {/* EMAIL */}
+          <div style={{ marginBottom:16 }}>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.65)", textTransform:"uppercase", marginBottom:8 }}>Email</label>
+            <div style={{ position:"relative", display:"flex", alignItems:"center" }}>
+              <span style={{ position:"absolute", left:16, color:"rgba(255,255,255,0.4)", fontSize:16, pointerEvents:"none", zIndex:1 }}>✉</span>
+              <input id="raos-email" className="raos-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Masukkan email Anda" required autoComplete="email"
+                style={{ width:"100%", height:55, borderRadius:14, background:"rgba(10,18,45,0.75)", border:"1px solid rgba(255,255,255,0.15)", color:"#fff", fontSize:14, padding:"0 16px 0 44px", outline:"none", transition:"all 0.3s ease", fontFamily:"inherit" }} />
             </div>
           </div>
+
+          {/* PASSWORD */}
+          <div style={{ marginBottom:8 }}>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.65)", textTransform:"uppercase", marginBottom:8 }}>Password</label>
+            <div style={{ position:"relative", display:"flex", alignItems:"center" }}>
+              <span style={{ position:"absolute", left:16, color:"rgba(255,255,255,0.4)", fontSize:15, pointerEvents:"none", zIndex:1 }}>🔒</span>
+              <input id="raos-password" className="raos-input" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Masukkan password Anda" required autoComplete="current-password"
+                style={{ width:"100%", height:55, borderRadius:14, background:"rgba(10,18,45,0.75)", border:"1px solid rgba(255,255,255,0.15)", color:"#fff", fontSize:14, padding:"0 48px 0 44px", outline:"none", transition:"all 0.3s ease", fontFamily:"inherit" }} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position:"absolute", right:14, background:"none", border:"none", color:"rgba(255,255,255,0.45)", cursor:"pointer", fontSize:16, padding:4, zIndex:1 }}>
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
+          </div>
+
+          {/* FORGOT */}
+          <div style={{ textAlign:"right", marginBottom:24 }}>
+            <a href="/forgot-password" className="raos-forgot" style={{ color:"rgba(255,255,255,0.5)", fontSize:12, textDecoration:"none", transition:"color 0.2s" }}>Lupa Password?</a>
+          </div>
+
+          {/* BUTTON */}
+          <button type="submit" disabled={loading} className="raos-btn"
+            style={{ width:"100%", height:55, borderRadius:14, background:loading ? "rgba(255,212,0,0.6)" : "#FFD400", color:"#000", fontSize:14, fontWeight:700, letterSpacing:3, textTransform:"uppercase", border:"none", cursor:loading ? "not-allowed" : "pointer", transition:"all 0.3s ease", boxShadow:"0 6px 20px rgba(255,212,0,0.30)", fontFamily:"inherit" }}>
+            {loading ? "MEMPROSES..." : "MASUK"}
+          </button>
+        </form>
+      </div>
+
+      {/* FOOTER */}
+      <div style={{ position:"absolute", bottom:24, left:"50%", transform:"translateX(-50%)", zIndex:100, textAlign:"center", color:"rgba(255,255,255,0.8)", fontSize:13, lineHeight:1.6, whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:10 }}>
+        <Image src="/icons/icon-512.png" alt="Logo" width={32} height={32} style={{ objectFit:"contain", borderRadius:"50%", filter:"drop-shadow(0 0 6px rgba(255,212,0,0.6))", opacity:0.9 }} />
+        <div>
+          <div style={{ fontWeight:600, fontSize:13 }}>PT. MENALA INTERNASIONAL GEMILANG</div>
+          <div style={{ fontSize:12, opacity:0.7 }}>© 2026 All Rights Reserved</div>
         </div>
       </div>
     </div>
