@@ -123,11 +123,14 @@ export default function DirectorCCClient({ initialAirports, initialAlerts }: Pro
       )
       .subscribe();
 
+    const onVisible = () => { if (!document.hidden) fetchStats(); };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       supabase.removeChannel(notifChannel);
       supabase.removeChannel(queueChannel);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [debouncedFetch]);
+  }, [debouncedFetch, fetchStats]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {

@@ -73,8 +73,11 @@ const S = {
 /* ══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════════════════════════════ */
+type LiveStats = { completed: number; suspended: number };
+
 export default function QueueBoardClient({ airportId, airportCode, initialQueue, stats: initialStats }: Props) {
   const [queue, setQueue]         = useState<QueueEntry[]>(initialQueue);
+  const [liveStats, setLiveStats] = useState<LiveStats>({ completed: initialStats.completed, suspended: initialStats.suspended });
   const [isPending, startTrans]   = useTransition();
   const [suspendId, setSuspendId] = useState<string | null>(null);
   const [suspendReason, setSuspendReason] = useState("");
@@ -89,24 +92,52 @@ export default function QueueBoardClient({ airportId, airportCode, initialQueue,
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  /* realtime */
+  /* realtime + cross-tab BroadcastChannel + visibility refresh */
   useEffect(() => {
     const supabase = createClient();
+    const bc = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(`raos-queue-${airportId}`) : null;
+
+    async function fetchQueue() {
+      const today = new Date().toISOString().split("T")[0];
+      const { data } = await (supabase as any)
+        .from("pickup_queues")
+        .select("id, queue_number, position, status, priority, check_in_time, call_time, no_show_count, drivers(nama, driver_code)")
+        .eq("airport_id", airportId).eq("tanggal", today)
+        .order("status").order("position");
+      if (!data) return;
+
+      const active    = (data as QueueEntry[]).filter((q) => !["COMPLETED", "NO_SHOW"].includes(q.status));
+      const completed = (data as QueueEntry[]).filter((q) => q.status === "COMPLETED").length;
+      const suspended = (data as QueueEntry[]).filter((q) => q.status === "SUSPENDED").length;
+      setQueue(active);
+      setLiveStats({ completed, suspended });
+
+      /* broadcast to sibling tabs so they skip their own DB call */
+      bc?.postMessage({ queue: active, completed, suspended });
+    }
+
+    /* listen for updates from other tabs */
+    if (bc) {
+      bc.onmessage = (e) => {
+        setQueue(e.data.queue);
+        setLiveStats({ completed: e.data.completed, suspended: e.data.suspended });
+      };
+    }
+
+    /* refresh when tab becomes visible after being in background */
+    const onVisible = () => { if (!document.hidden) fetchQueue(); };
+    document.addEventListener("visibilitychange", onVisible);
+
     const channel = supabase
       .channel(`queue-${airportId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_queues", filter: `airport_id=eq.${airportId}` },
-        async () => {
-          const today = new Date().toISOString().split("T")[0];
-          const { data } = await (supabase as any)
-            .from("pickup_queues")
-            .select("id, queue_number, position, status, priority, check_in_time, call_time, no_show_count, drivers(nama, driver_code)")
-            .eq("airport_id", airportId).eq("tanggal", today)
-            .not("status", "in", '("COMPLETED","NO_SHOW")')
-            .order("status").order("position");
-          if (data) setQueue(data);
-        })
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_queues", filter: `airport_id=eq.${airportId}` }, fetchQueue)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      supabase.removeChannel(channel);
+      bc?.close();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [airportId]);
 
   /* actions */
@@ -133,8 +164,8 @@ export default function QueueBoardClient({ airportId, airportCode, initialQueue,
   const waiting   = active.filter((q) => q.status === "WAITING").length;
   const called    = active.filter((q) => q.status === "CALLED").length;
   const pickup    = active.filter((q) => q.status === "PICKUP").length;
-  const completed = initialStats.completed;
-  const suspended = initialStats.suspended;
+  const completed = liveStats.completed;
+  const suspended = liveStats.suspended;
   const loadLabel = waiting > 100 ? "OVERLOAD" : waiting >= 50 ? "PADAT" : "NORMAL";
   const loadColor = waiting > 100 ? "#FF3B5C" : waiting >= 50 ? "#FFD300" : "#00E5A0";
 

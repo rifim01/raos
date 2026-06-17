@@ -63,15 +63,20 @@ export default function TvModeClient({ initialAirports }: Props) {
     return () => clearInterval(id);
   }, [fetchStats]);
 
-  // Realtime subscription
+  // Realtime subscription + visibilitychange
   useEffect(() => {
     const supabase = createClient();
     const ch = supabase
       .channel("tv-queue")
       .on("postgres_changes", { event: "*", schema: "public", table: "pickup_queues" }, debouncedFetch)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [debouncedFetch]);
+    const onVisible = () => { if (!document.hidden) fetchStats(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      supabase.removeChannel(ch);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [debouncedFetch, fetchStats]);
 
   const displayAirports = airports.filter((a) =>
     ["DJB001", "PKU001", "BTH001", "BPN001", "MDC001", "UPG001", "CGK001"].includes(a.airport_code)

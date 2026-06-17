@@ -33,36 +33,54 @@ export default function CommandCenterClient({ airportId, airportCode }: Props) {
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [clock, setClock] = useState(new Date());
 
-  const fetchQueue = async () => {
-    if (!airportId) return;
-    const supabase = createClient();
-    const today = new Date().toISOString().split("T")[0];
-    const { data } = await (supabase as any)
-      .from("pickup_queues")
-      .select("id, queue_number, position, status, priority, check_in_time, call_time, drivers(nama, driver_code)")
-      .eq("airport_id", airportId)
-      .eq("tanggal", today)
-      .not("status", "in", '("COMPLETED","NO_SHOW")')
-      .order("position");
-    if (data) setQueue(data);
-  };
-
   // Clock
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Initial + Realtime
+  // Initial + Realtime + BroadcastChannel + visibilitychange
   useEffect(() => {
-    fetchQueue();
     if (!airportId) return;
     const supabase = createClient();
+    const bc = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(`raos-queue-${airportId}`) : null;
+
+    async function fetchQueue() {
+      const today = new Date().toISOString().split("T")[0];
+      const { data } = await (supabase as any)
+        .from("pickup_queues")
+        .select("id, queue_number, position, status, priority, check_in_time, call_time, drivers(nama, driver_code)")
+        .eq("airport_id", airportId)
+        .eq("tanggal", today)
+        .not("status", "in", '("COMPLETED","NO_SHOW")')
+        .order("position");
+      if (data) {
+        setQueue(data);
+        bc?.postMessage({ queue: data });
+      }
+    }
+
+    /* receive updates pushed by QueueBoardClient or sibling CC tabs */
+    if (bc) {
+      bc.onmessage = (e) => {
+        if (e.data.queue) setQueue(e.data.queue.filter((q: QueueEntry) => !["COMPLETED","NO_SHOW"].includes(q.status)));
+      };
+    }
+
+    const onVisible = () => { if (!document.hidden) fetchQueue(); };
+    document.addEventListener("visibilitychange", onVisible);
+
+    fetchQueue();
     const channel = supabase
       .channel(`cc-${airportId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "pickup_queues", filter: `airport_id=eq.${airportId}` }, fetchQueue)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      supabase.removeChannel(channel);
+      bc?.close();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [airportId]);
 
   const waiting  = queue.filter((q) => q.status === "WAITING");
