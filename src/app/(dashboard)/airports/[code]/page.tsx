@@ -51,6 +51,22 @@ export default async function AirportDetailPage({
     .eq("status", "ACTIVE")
     .limit(5);
 
+  /* real counts from drivers table (view driver_online often 0) */
+  const { count: driverAktifCount } = await (supabase as any)
+    .from("drivers")
+    .select("*", { count: "exact", head: true })
+    .eq("airport_id", airport.id)
+    .eq("status", "ACTIVE");
+
+  /* staff hadir today from attendance */
+  const todayStr = new Date().toISOString().split("T")[0];
+  const { count: staffHadirCount } = await (supabase as any)
+    .from("attendance")
+    .select("*", { count: "exact", head: true })
+    .eq("airport_id", airport.id)
+    .eq("tanggal", todayStr)
+    .eq("check_type", "CHECK_IN");
+
   const { data: recentAttendance } = await (supabase as any)
     .from("attendance")
     .select("id, tanggal, check_type, staff(nama)")
@@ -62,9 +78,9 @@ export default async function AirportDetailPage({
 
   const kpis = [
     { label: "Total Driver", value: b?.total_driver ?? 0, color: "blue", icon: "M19 17H5a2 2 0 01-2-2V9l3-6h12l3 6v6a2 2 0 01-2 2zM7.5 17.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM16.5 17.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM5 9h14" },
-    { label: "Driver Online", value: b?.driver_online ?? 0, color: "green", icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" },
+    { label: "Driver Aktif", value: driverAktifCount ?? b?.driver_online ?? 0, color: "green", icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" },
     { label: "Total Staff", value: b?.total_staff ?? 0, color: "purple", icon: "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8z" },
-    { label: "Staff Hadir", value: b?.staff_hadir ?? 0, color: "green", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
+    { label: "Staff Hadir", value: staffHadirCount ?? b?.staff_hadir ?? 0, color: "green", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
     { label: "Queue Hari Ini", value: b?.queue_hari_ini ?? 0, color: "yellow", icon: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" },
     { label: "Queue Menunggu", value: b?.queue_waiting ?? 0, color: "orange", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
     { label: "Pendapatan Hari Ini", value: formatCurrency(Number(b?.income_hari_ini ?? 0)), color: "green", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" },

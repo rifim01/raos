@@ -33,15 +33,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor: "#0A1628" }}>
 
       {/* === BACKGROUND LAYERS === */}
 
       {/* Layer 1: airport photo — full visibility */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/baground.png')" }}
+        style={{ backgroundImage: "url('/baground.png')", backgroundSize: "cover", backgroundPosition: "center" }}
       />
+      {/* Layer 1b: fallback gradient if image fails to load */}
+      <div className="absolute inset-0" style={{
+        background: "linear-gradient(160deg, #0D2B55 0%, #0A1628 40%, #1A0A2E 100%)",
+        zIndex: -1,
+      }} />
 
       {/* Layer 2: subtle dark tint so card text stays readable */}
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.35)" }} />
