@@ -57,7 +57,7 @@ function fmtTime(iso: string | null) {
 
 /* ── Inline styles ──────────────────────────────────────────────────────── */
 const S = {
-  wrap:   { background: "#080D1A", minHeight: "100vh", margin: "-24px -24px -24px -24px", padding: "0", fontFamily: "system-ui,-apple-system,sans-serif" } as React.CSSProperties,
+  wrap:   { background: "#080D1A", margin: "0 -24px -24px -24px", padding: "0", fontFamily: "system-ui,-apple-system,sans-serif" } as React.CSSProperties,
   card:   { background: "#0D1528", border: "1px solid rgba(255,211,0,.1)", borderRadius: 10 } as React.CSSProperties,
   cardHdr:{ padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,.05)", display:"flex", alignItems:"center", justifyContent:"space-between" } as React.CSSProperties,
   title:  { fontSize: 10, fontWeight: 700, color: "#FFD300", textTransform:"uppercase" as const, letterSpacing: ".8px", display:"flex", alignItems:"center", gap: 6 },
@@ -215,10 +215,10 @@ export default function QueueBoardClient({ airportId, airportCode, initialQueue,
       </div>
 
       {/* ── 3-COLUMN MAIN ─────────────────────────────────────────── */}
-      <div style={{ display:"grid", gridTemplateColumns:"200px 1fr 190px", minHeight:340, borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"200px 1fr 190px", height:380, borderBottom:"1px solid rgba(255,255,255,.05)" }}>
 
         {/* LEFT — ring charts + bar */}
-        <div style={{ borderRight:"1px solid rgba(255,255,255,.05)", display:"flex", flexDirection:"column" }}>
+        <div style={{ borderRight:"1px solid rgba(255,255,255,.05)", display:"flex", flexDirection:"column", overflow:"hidden", height:380 }}>
           <div style={S.cardHdr}>
             <div style={S.title}><span style={{ width:6, height:6, borderRadius:"50%", background:"#FFD300", display:"inline-block" }}/>Queue Metrics</div>
           </div>
@@ -275,20 +275,20 @@ export default function QueueBoardClient({ airportId, airportCode, initialQueue,
         </div>
 
         {/* CENTER — 3D Airport Map */}
-        <div style={{ borderRight:"1px solid rgba(255,255,255,.05)", display:"flex", flexDirection:"column" }}>
+        <div style={{ borderRight:"1px solid rgba(255,255,255,.05)", display:"flex", flexDirection:"column", overflow:"hidden", height:380 }}>
           <div style={S.cardHdr}>
             <div style={S.title}><span style={{ width:6, height:6, borderRadius:"50%", background:"#FFD300", display:"inline-block" }}/>Live Airport Map · {airportCode}</div>
             <div style={{ display:"flex", alignItems:"center", gap:6 }}>
               <span style={{ fontSize:9, color:"#00E5A0", fontWeight:700 }}>● {active.length} Antrian Aktif</span>
             </div>
           </div>
-          <div style={{ flex:1, position:"relative", overflow:"hidden", background:"#050D1E", minHeight:260 }}>
+          <div style={{ position:"relative", overflow:"hidden", background:"#050D1E", height:332 }}>
             <AirportMap queue={active} airportCode={airportCode}/>
           </div>
         </div>
 
         {/* RIGHT — donuts + violations + wave */}
-        <div style={{ display:"flex", flexDirection:"column" }}>
+        <div style={{ display:"flex", flexDirection:"column", overflow:"hidden", height:380 }}>
           <div style={S.cardHdr}>
             <div style={S.title}><span style={{ width:6, height:6, borderRadius:"50%", background:"#FF3B5C", display:"inline-block" }}/>Pickup & Alerts</div>
           </div>
@@ -487,7 +487,7 @@ function AirportMap({ queue, airportCode }: { queue: QueueEntry[]; airportCode: 
   const susps   = queue.filter(q => q.status === "SUSPENDED" || q.no_show_count > 0);
 
   return (
-    <svg width="100%" height="100%" viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg" style={{ display:"block" }}>
+    <svg width="100%" height="332" viewBox="0 0 560 332" xmlns="http://www.w3.org/2000/svg" style={{ display:"block" }}>
       <defs>
         <filter id="qf-yl"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="qf-gn"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
