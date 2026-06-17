@@ -736,13 +736,13 @@ function AirportMap({ queue, airportCode }: { queue: QueueEntry[]; airportCode: 
         <text x="10" y="121" fontSize="7" fill="rgba(0,200,255,.6)" fontWeight="800" letterSpacing="1">LEGENDA</text>
         <ellipse cx="16" cy="131" rx="12" ry="5.5" fill="#FFD300"/><rect x="4" y="131" width="24" height="5.5" fill="#B88A00"/>
         <text x="16" y="135" fontSize="5.5" fontWeight="800" fill="#000" textAnchor="middle">Q-XX</text>
-        <text x="32" y="135" fontSize="7" fill="rgba(255,255,255,.6)">Menunggu ({waiting})</text>
+        <text x="32" y="135" fontSize="7" fill="rgba(255,255,255,.6)">Menunggu ({waiting.length})</text>
         <ellipse cx="16" cy="145" rx="12" ry="5.5" fill="#3B8BFF"/><rect x="4" y="145" width="24" height="5.5" fill="#1A3A8B"/>
         <text x="16" y="149" fontSize="5.5" fontWeight="800" fill="#fff" textAnchor="middle">C-XX</text>
-        <text x="32" y="149" fontSize="7" fill="rgba(255,255,255,.6)">Dipanggil ({called})</text>
+        <text x="32" y="149" fontSize="7" fill="rgba(255,255,255,.6)">Dipanggil ({called.length})</text>
         <ellipse cx="16" cy="159" rx="12" ry="5.5" fill="#00E5A0"/><rect x="4" y="159" width="24" height="5.5" fill="#006644"/>
         <text x="16" y="163" fontSize="5.5" fontWeight="800" fill="#000" textAnchor="middle">P-XX</text>
-        <text x="32" y="163" fontSize="7" fill="rgba(255,255,255,.6)">Pickup ({pickup})</text>
+        <text x="32" y="163" fontSize="7" fill="rgba(255,255,255,.6)">Pickup ({pickup.length})</text>
         <ellipse cx="16" cy="173" rx="12" ry="5.5" fill="#FF3B5C"/><rect x="4" y="173" width="24" height="5.5" fill="#7B0020"/>
         <text x="16" y="177" fontSize="5.5" fontWeight="800" fill="#fff" textAnchor="middle">D-XX</text>
         <text x="32" y="177" fontSize="7" fill="rgba(255,255,255,.6)">Pelanggaran ({susps.length})</text>
