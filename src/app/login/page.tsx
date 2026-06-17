@@ -40,15 +40,15 @@ export default function LoginPage() {
       {/* Layer 1: airport photo */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/bg-airport.jpg')" }}
+        style={{ backgroundImage: "url('/baground.png')" }}
       />
 
-      {/* Layer 2: dark base so even without photo it looks good */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#03081a 0%,#0a1628 50%,#0d0510 100%)", opacity: 0.55 }} />
+      {/* Layer 2: dark base — reduced so airport scene shows through */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#03081a 0%,#0a1628 50%,#0d0510 100%)", opacity: 0.30 }} />
 
-      {/* Layer 3: color accent — lighter so photo shows through */}
+      {/* Layer 3: color accent */}
       <div className="absolute inset-0" style={{
-        background: "linear-gradient(160deg, rgba(13,71,161,0.55) 0%, rgba(21,101,192,0.35) 45%, rgba(183,28,28,0.40) 100%)"
+        background: "linear-gradient(160deg, rgba(13,71,161,0.30) 0%, rgba(21,101,192,0.15) 45%, rgba(183,28,28,0.25) 100%)"
       }} />
 
       {/* Layer 4: animated runway lights strip at bottom */}
