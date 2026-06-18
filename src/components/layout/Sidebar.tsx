@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/navigation";
+import Link from "next/link"; // SUDAH DIPERBAIKI: Diarahkan ke next/link dengan benar
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -16,11 +16,11 @@ const AIRPORTS = [
 ];
 
 /* ─── micro SVG wrapper ──────────────────────────────────────────────────── */
-function SI({ children, size = 18 }: { children: React.ReactNode; size?: number }) {
+function SI({ children, size = 17 }: { children: React.ReactNode; size?: number }) {
   return (
     <svg
       viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
       width={size} height={size} style={{ flexShrink: 0 }}
     >
       {children}
