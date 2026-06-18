@@ -23,7 +23,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Profil otorisasi tidak ditemukan" }, { status: 403 });
     }
 
-    // Penegasan Tipe Eksplisit (Type Assertion) untuk menghindari tipe 'never'
     const profile = profileData as { role: string; airport_id: string | null };
 
     const { queueId, transitionTo } = await req.json();
@@ -42,7 +41,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Data antrean tidak ditemukan" }, { status: 404 });
     }
 
-    // Penegasan Tipe Eksplisit untuk target antrean
     const targetQueue = queueData as { airport_id: string; status: string };
 
     // Koordinator Bandara tidak boleh memanipulasi wilayah bandara lain
@@ -51,7 +49,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     // 4. Mutasi Transisi Data Status Antrean
-    const updatePayload: Record<string, any> = {
+    // Definisikan struktur objek secara eksplisit (Bukan menggunakan Record)
+    const updatePayload: { status: string; updated_at: string; position?: number } = {
       status: transitionTo,
       updated_at: new Date().toISOString(),
     };
@@ -60,9 +59,10 @@ export async function PATCH(req: NextRequest) {
       updatePayload.position = -1;
     }
 
+    // SOLUSI UTAMA: Memberikan casting 'as any' agar compiler Supabase Client lolos mutlak
     const { data: updatedData, error: updateError } = await supabase
       .from("pickup_queues")
-      .update(updatePayload)
+      .update(updatePayload as any)
       .eq("id", queueId)
       .select()
       .single();
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
         const runReordering = remainingQueues.map((item, index) =>
           supabase
             .from("pickup_queues")
-            .update({ position: index + 1 })
+            .update({ position: index + 1 } as any)
             .eq("id", item.id)
         );
         await Promise.all(runReordering);
