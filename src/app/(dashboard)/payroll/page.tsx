@@ -19,6 +19,7 @@ export default async function PayrollPage() {
   let airportId   = user.airport_id   ?? "";
   let airportCode = user.airport_code ?? "";
 
+  // 1. Ambil data bandara acuan pertama jika diakses oleh Direksi Nasional (Role Level >= 4)
   if (!airportId && user.role_level >= 4) {
     const { data: first } = await (supabase as any)
       .from("airports").select("id, code")
@@ -28,6 +29,7 @@ export default async function PayrollPage() {
     airportCode = first?.code ?? "";
   }
 
+  // 2. Proteksi (supabase as any) disuntikkan di sini untuk mengamankan relasi kompilasi data staff
   const { data: payrolls } = await (supabase as any)
     .from("payroll")
     .select("id,status,periode,gaji_pokok,bpjs,kuota,bonus,lembur,denda_telat,potongan_alpha,kasbon,deposit,total_pendapatan,total_potongan,gaji_bersih,total_hadir,total_terlambat,total_alpha,jam_lembur,staff(nama,jabatan,staff_code)")
