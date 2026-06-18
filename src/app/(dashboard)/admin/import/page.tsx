@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PRESET_SHEETS, type PresetSheet } from "@/lib/import/sheets";
 
 const AIRPORTS = [
   { code: "BTH001", label: "Batam (BTH001)" },
@@ -12,18 +13,11 @@ const AIRPORTS = [
   { code: "CGK001", label: "Tangerang (CGK001)" },
 ];
 
-// Preset sheets dari aplikasi.txt
-const PRESET_SHEETS = [
-  { label: "📋 Master Data Staff", url: "https://docs.google.com/spreadsheets/d/1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw/edit?gid=1974631595", type: "staff", airport: "" },
-  { label: "🚕 Driver Batam", url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit?gid=2145251861", type: "driver", airport: "BTH001" },
-  { label: "🚕 Driver Jambi", url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit", type: "driver", airport: "DJB001" },
-  { label: "🚕 Driver Makassar", url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit", type: "driver", airport: "UPG001" },
-  { label: "🚕 Driver Balikpapan", url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit", type: "driver", airport: "BPN001" },
-  { label: "🚕 Driver Manado", url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit", type: "driver", airport: "MDC001" },
-  { label: "🚕 Driver Pekanbaru", url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit", type: "driver", airport: "PKU001" },
-  { label: "🚕 Driver External Batam", url: "https://docs.google.com/spreadsheets/d/1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc/edit?gid=1698812948", type: "driver_external", airport: "BTH001" },
-  { label: "🚕 Driver External Jambi", url: "https://docs.google.com/spreadsheets/d/1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc/edit", type: "driver_external", airport: "DJB001" },
-];
+function presetDisplayLabel(preset: PresetSheet): string {
+  if (preset.type === "staff") return `📋 ${preset.label}`;
+  if (preset.type === "driver_external") return `🚕 ${preset.label.replace("Ext.", "External")}`;
+  return `🚕 ${preset.label}`;
+}
 
 function parseTSV(text: string): Record<string, string>[] {
   const lines = text.trim().split("\n").filter(l => l.trim());
@@ -49,7 +43,7 @@ export default function ImportPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success?: boolean; imported?: number; rows_fetched?: number; headers?: string[]; error?: string } | null>(null);
 
-  function applyPreset(preset: typeof PRESET_SHEETS[0]) {
+  function applyPreset(preset: PresetSheet) {
     setSheetsUrl(preset.url);
     setDataType(preset.type === "driver_external" ? "driver_external" : preset.type as "driver" | "staff");
     setAirportCode(preset.airport);
@@ -124,7 +118,7 @@ export default function ImportPage() {
               {PRESET_SHEETS.map((p, i) => (
                 <button key={i} onClick={() => applyPreset(p)}
                   className="px-3 py-1.5 bg-gray-50 hover:bg-blue-50 hover:text-[#1565C0] border border-gray-200 hover:border-blue-200 rounded-lg text-xs font-medium transition-all">
-                  {p.label}
+                  {presetDisplayLabel(p)}
                 </button>
               ))}
             </div>

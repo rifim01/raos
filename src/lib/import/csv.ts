@@ -1,4 +1,11 @@
 import type { SheetRow } from "./types";
+import { resolveSheetGidForAirport } from "./sheets";
+
+export interface FetchSheetCsvOptions {
+  /** Used to resolve tab GID when URL omits gid (driver internal/external sheets) */
+  airportCode?: string;
+  driverType?: "INTERNAL" | "EXTERNAL";
+}
 
 export function parseCSV(text: string): SheetRow[] {
   const lines = text.trim().split("\n").filter((l) => l.trim());
@@ -39,24 +46,53 @@ export function parseCSV(text: string): SheetRow[] {
     .filter((row) => Object.values(row).some((v) => v));
 }
 
-export function extractSheetInfo(url: string): { sheetId: string; gid: string } | null {
+/**
+ * Parse spreadsheet ID and tab GID from a Google Sheets URL.
+ * Supports ?gid=, &gid=, and #gid= forms. Falls back to airport mapping when gid is missing.
+ */
+export function extractSheetInfo(
+  url: string,
+  options?: FetchSheetCsvOptions
+): { sheetId: string; gid: string; gidSource: "url" | "airport" | "default" } | null {
   try {
     const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
     if (!match) return null;
+
     const sheetId = match[1];
-    const gidMatch = url.match(/[#&?]gid=(\d+)/);
-    const gid = gidMatch ? gidMatch[1] : "0";
-    return { sheetId, gid };
+    const gidMatch = url.match(/(?:[#&?])gid=(\d+)/);
+    let gid = gidMatch?.[1] ?? null;
+    let gidSource: "url" | "airport" | "default" = gid ? "url" : "default";
+
+    if ((!gid || gid === "0") && options?.airportCode) {
+      const mapped = resolveSheetGidForAirport(
+        sheetId,
+        options.airportCode,
+        options.driverType ?? "INTERNAL"
+      );
+      if (mapped) {
+        gid = mapped;
+        gidSource = "airport";
+      }
+    }
+
+    return { sheetId, gid: gid ?? "0", gidSource };
   } catch {
     return null;
   }
 }
 
-export async function fetchSheetCsv(url: string): Promise<{ csv: string; csvUrl: string }> {
-  const info = extractSheetInfo(url);
+export function buildSheetCsvExportUrl(sheetId: string, gid: string): string {
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+}
+
+export async function fetchSheetCsv(
+  url: string,
+  options?: FetchSheetCsvOptions
+): Promise<{ csv: string; csvUrl: string; sheetId: string; gid: string; gidSource: string }> {
+  const info = extractSheetInfo(url, options);
   if (!info) throw new Error("URL Google Sheets tidak valid");
 
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${info.sheetId}/export?format=csv&gid=${info.gid}`;
+  const csvUrl = buildSheetCsvExportUrl(info.sheetId, info.gid);
   const csvRes = await fetch(csvUrl, {
     headers: { "User-Agent": "RAOS-Import/1.0" },
   });
@@ -67,5 +103,11 @@ export async function fetchSheetCsv(url: string): Promise<{ csv: string; csvUrl:
     );
   }
 
-  return { csv: await csvRes.text(), csvUrl };
+  return {
+    csv: await csvRes.text(),
+    csvUrl,
+    sheetId: info.sheetId,
+    gid: info.gid,
+    gidSource: info.gidSource,
+  };
 }

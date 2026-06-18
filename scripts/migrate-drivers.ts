@@ -1,7 +1,11 @@
 // Migration: Google Sheets "DATABASE DRIVER AIRPORT" + "DATABASE DRIVER EXTERNAL" → Supabase drivers
 // Run: npx tsx scripts/migrate-drivers.ts
+//
+// Internal sheet ID: 1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc
+// Set SHEET_ID_DRIVER_INTERNAL in .env.local (see scripts/constants/google-sheets.ts for GID map)
 
 import { getSheetRows, listSheetNames } from './utils/google.js'
+import { DRIVER_INTERNAL_SHEET_ID } from './constants/google-sheets.js'
 import { supabase, getAirportMap, upsertBatch } from './utils/supabase.js'
 import { Logger, saveReport, printBanner } from './utils/logger.js'
 import { resolveAirportCode } from './utils/mapper.js'
@@ -105,6 +109,7 @@ async function main() {
 
   if (!SPREADSHEET_INTERNAL) {
     log.error('SHEET_ID_DRIVER_INTERNAL atau SHEET_ID_MASTER tidak diset di .env.local')
+    log.error(`Contoh: SHEET_ID_DRIVER_INTERNAL=${DRIVER_INTERNAL_SHEET_ID}`)
     process.exit(1)
   }
 

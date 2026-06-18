@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PRESET_SHEETS, type PresetSheet } from "@/lib/import/sheets";
 
 /* ── Types ─────────────────────────────────────────── */
 type RoleGroup = "STAFF" | "DRIVER" | "AIRPORT_COORDINATOR" | "DIRECTOR" | "SUPER_ADMIN";
@@ -35,17 +36,6 @@ const AIRPORTS = [
   { code: "BPN001", label: "Balikpapan" },
   { code: "MDC001", label: "Manado" },
   { code: "PKU001", label: "Pekanbaru" },
-];
-
-const PRESET_SHEETS = [
-  { label: "Master Data Staff",   url: "https://docs.google.com/spreadsheets/d/1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw/edit?gid=1974631595", type: "staff",   airport: "" },
-  { label: "Driver Batam",        url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit?gid=2145251861",  type: "driver",  airport: "BTH001" },
-  { label: "Driver Jambi",        url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit",                 type: "driver",  airport: "DJB001" },
-  { label: "Driver Makassar",     url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit",                 type: "driver",  airport: "UPG001" },
-  { label: "Driver Balikpapan",   url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit",                 type: "driver",  airport: "BPN001" },
-  { label: "Driver Manado",       url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit",                 type: "driver",  airport: "MDC001" },
-  { label: "Driver Pekanbaru",    url: "https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/edit",                 type: "driver",  airport: "PKU001" },
-  { label: "Driver Ext. Batam",   url: "https://docs.google.com/spreadsheets/d/1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc/edit?gid=1698812948",  type: "driver_external", airport: "BTH001" },
 ];
 
 /* ── Helpers ────────────────────────────────────────── */
@@ -247,7 +237,7 @@ function SyncDataTab() {
   const [loading, setLoading] = useState<string | null>(null);
   const [airport, setAirport] = useState("BTH001");
 
-  async function syncSheet(preset: typeof PRESET_SHEETS[0], key: string) {
+  async function syncSheet(preset: PresetSheet, key: string) {
     setLoading(key);
     setResults(r => ({ ...r, [key]: { ok: false, text: "Sinkronisasi..." } }));
     try {

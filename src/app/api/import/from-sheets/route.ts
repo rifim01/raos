@@ -56,9 +56,25 @@ export async function POST(req: NextRequest) {
 
     let csvText: string;
     try {
-      const fetched = await fetchSheetCsv(url.trim());
+      const driverType =
+        data_type === "driver"
+          ? driver_type === "EXTERNAL"
+            ? "EXTERNAL"
+            : "INTERNAL"
+          : undefined;
+
+      const fetched = await fetchSheetCsv(url.trim(), {
+        airportCode: airport_code,
+        driverType,
+      });
       csvText = fetched.csv;
-      importLog("info", "sheet fetched", { csvUrl: fetched.csvUrl });
+      importLog("info", "sheet fetched", {
+        csvUrl: fetched.csvUrl,
+        sheetId: fetched.sheetId,
+        gid: fetched.gid,
+        gidSource: fetched.gidSource,
+        airport_code,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal fetch Google Sheets";
       return errorResponse(400, message);

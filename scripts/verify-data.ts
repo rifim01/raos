@@ -5,6 +5,9 @@
 import { getSheetRowCount } from './utils/google.js'
 import { getTableCount } from './utils/supabase.js'
 import { printBanner } from './utils/logger.js'
+import {
+  DRIVER_INTERNAL_TAB_ALIASES,
+} from './constants/google-sheets.js'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -37,7 +40,7 @@ function buildTargets(): VerifyTarget[] {
   const targets: VerifyTarget[] = []
 
   if (staff)      targets.push({ label: 'Staff',                table: 'staff',                   spreadsheetId: staff,      sheetName: process.env.SHEET_NAME_STAFF       ?? 'MASTER DATA STAFF' })
-  if (driverInt)  targets.push({ label: 'Driver Internal',      table: 'drivers',                 spreadsheetId: driverInt,  sheetName: 'ID Rifim Airport Jambi' })
+  if (driverInt)  targets.push({ label: 'Driver Internal',      table: 'drivers',                 spreadsheetId: driverInt,  sheetName: DRIVER_INTERNAL_TAB_ALIASES.DJB001[0] })
   if (driverExt)  targets.push({ label: 'Driver External',      table: 'drivers',                 spreadsheetId: driverExt,  sheetName: 'ID Rifim Batam' })
   if (att)        targets.push({ label: 'Attendance',           table: 'attendance',              spreadsheetId: att,        sheetName: process.env.SHEET_NAME_ATTENDANCE  ?? 'ABSENSI' })
   if (sched)      targets.push({ label: 'Staff Schedule',       table: 'staff_schedule',          spreadsheetId: sched,      sheetName: process.env.SHEET_NAME_SCHEDULE    ?? 'JADWAL KERJA' })
