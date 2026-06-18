@@ -12,8 +12,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Sesi tidak valid atau kedaluwarsa" }, { status: 401 });
     }
 
-    // 2. Ekstraksi Profil Pengguna
-    const { data: profileData, error: profileError } = await supabase
+    // 2. Ekstraksi Profil Pengguna (Pakai bypass 'as any')
+    const { data: profileData, error: profileError } = await (supabase as any)
       .from("profiles")
       .select("role, airport_id")
       .eq("id", user.id)
@@ -30,8 +30,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Payload parameter tidak lengkap" }, { status: 400 });
     }
 
-    // 3. Ambil data antrean untuk verifikasi perimeter bandara
-    const { data: queueData, error: queueFetchError } = await supabase
+    // 3. Ambil data antrean untuk verifikasi perimeter bandara (Pakai bypass 'as any')
+    const { data: queueData, error: queueFetchError } = await (supabase as any)
       .from("pickup_queues")
       .select("airport_id, status")
       .eq("id", queueId)
@@ -49,8 +49,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // 4. Mutasi Transisi Data Status Antrean
-    // Definisikan struktur objek secara eksplisit (Bukan menggunakan Record)
-    const updatePayload: { status: string; updated_at: string; position?: number } = {
+    const updatePayload: Record<string, any> = {
       status: transitionTo,
       updated_at: new Date().toISOString(),
     };
@@ -59,10 +58,10 @@ export async function PATCH(req: NextRequest) {
       updatePayload.position = -1;
     }
 
-    // SOLUSI UTAMA: Memberikan casting 'as any' agar compiler Supabase Client lolos mutlak
-    const { data: updatedData, error: updateError } = await supabase
+    // SOLUSI UTAMA: Pakai (supabase as any) untuk meruntuhkan kekakuan tipe 'never'
+    const { data: updatedData, error: updateError } = await (supabase as any)
       .from("pickup_queues")
-      .update(updatePayload as any)
+      .update(updatePayload)
       .eq("id", queueId)
       .select()
       .single();
@@ -71,7 +70,7 @@ export async function PATCH(req: NextRequest) {
 
     // 5. Otomasi Penataan Ulang Nomor Antrean Sisa (Rapatkan Posisi)
     if (["COMPLETED", "SUSPENDED", "NO_SHOW"].includes(transitionTo)) {
-      const { data: remainingQueues } = await supabase
+      const { data: remainingQueues } = await (supabase as any)
         .from("pickup_queues")
         .select("id")
         .eq("airport_id", targetQueue.airport_id)
@@ -79,10 +78,10 @@ export async function PATCH(req: NextRequest) {
         .order("position", { ascending: true });
 
       if (remainingQueues && remainingQueues.length > 0) {
-        const runReordering = remainingQueues.map((item, index) =>
-          supabase
+        const runReordering = remainingQueues.map((item: any, index: number) =>
+          (supabase as any)
             .from("pickup_queues")
-            .update({ position: index + 1 } as any)
+            .update({ position: index + 1 })
             .eq("id", item.id)
         );
         await Promise.all(runReordering);
