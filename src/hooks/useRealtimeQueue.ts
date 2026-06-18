@@ -21,7 +21,6 @@ export function useRealtimeQueue(airportId: string) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const supabase = createClient();
 
-  // 1. Fungsi penarik state antrean aktif awal (Snapshot data)
   const fetchSnapshot = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -49,7 +48,6 @@ export function useRealtimeQueue(airportId: string) {
 
     fetchSnapshot();
 
-    // 2. Berlangganan ke Supabase Realtime Channel dengan isolasi filter level baris
     const channel = supabase
       .channel(`live_queue_airport_${airportId}`)
       .on(
@@ -61,21 +59,16 @@ export function useRealtimeQueue(airportId: string) {
           filter: `airport_id=eq.${airportId}`,
         },
         async (payload) => {
-          // Trigger snapshot fetch ulang jika terjadi perubahan struktural masif (Insert/Delete/Re-ordering)
           if (payload.eventType === "INSERT" || payload.eventType === "DELETE") {
             await fetchSnapshot();
             return;
           }
 
-          // Optimisasi reaktif jika terjadi UPDATE status tunggal (Panggil/Selesai)
           if (payload.eventType === "UPDATE") {
             const updatedRecord = payload.new as QueueItem;
-            
-            // Jika status berubah menjadi terminasi antrean aktif, buang dari array tampilan lokal
             if (["COMPLETED", "SUSPENDED", "NO_SHOW"].includes(updatedRecord.status)) {
               setQueue((prev) => prev.filter((item) => item.id !== updatedRecord.id));
             } else {
-              // Refresh snapshot jika posisi bergeser masif, atau update mutasi record lokal
               await fetchSnapshot();
             }
           }
