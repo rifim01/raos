@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// Mengimpor tipe data "Variants" agar konfigurasi animasi lolos type checking
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 interface CommandItem {
   id: string;
@@ -68,7 +69,8 @@ export default function FloatingCommandCenter() {
     },
   ];
 
-  const containerVariants = {
+  // Menambahkan tipe data : Variants agar disetujui oleh TypeScript compiler
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -86,7 +88,8 @@ export default function FloatingCommandCenter() {
     },
   };
 
-  const itemVariants = {
+  // Menambahkan tipe data : Variants agar disetujui oleh TypeScript compiler
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     show: { 
       opacity: 1, 
