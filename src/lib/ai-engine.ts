@@ -38,7 +38,7 @@ export function detectIntent(query: string): string[] {
   return intents;
 }
 
-// Client-Side Smart Search (Kebal dari bug tanda baca dan query database)
+// Smart Scoring & Token Guard Search - Dioptimalkan untuk Groq 6000 TPM Limit
 export async function searchKnowledge(
   query: string,
   airportId: string | null,
@@ -49,32 +49,57 @@ export async function searchKnowledge(
   try {
     const supabase = await createClient();
 
-    // 1. Tarik langsung data teks dari tabel company_knowledge
+    // 1. Tarik data dari tabel basis pengetahuan
     const { data: allKnowledge, error } = await (supabase as any)
       .from("company_knowledge")
       .select("content, file_path");
 
-    if (error) {
-      console.error("[RIFIM AI] Gagal mengambil data basis pengetahuan:", error.message);
-      return "";
-    }
+    if (error || !allKnowledge || allKnowledge.length === 0) return "";
 
-    if (!allKnowledge || allKnowledge.length === 0) return "";
+    // 2. Daftar kata eliminasi (Stop Words) agar pencarian fokus pada inti pertanyaan
+    const stopWords = new Set([
+      "siapa", "apa", "bagaimana", "mengapa", "kapan", "yang", 
+      "dan", "di", "ke", "dari", "untuk", "adalah", "tentang", 
+      "rifim", "raos", "pt", "saya", "kamu", "bisa", "tolong"
+    ]);
 
-    // 2. Bersihkan tanda baca (seperti tanda tanya) dan pecah menjadi kata kunci pencarian
     const cleanQuery = query.toLowerCase().replace(/[?.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
-    const words = cleanQuery.split(/\s+/).filter(w => w.length > 2);
+    const keywords = cleanQuery.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
 
-    // 3. Filter dokumen yang mengandung kata kunci secara real-time
-    const matchedDocs = allKnowledge.filter((doc: any) => {
+    if (keywords.length === 0) return "";
+
+    // 3. Hitung bobot relevansi kecocokan kata kunci pada tiap dokumen
+    const scoredDocs = allKnowledge.map((doc: any) => {
       const contentLower = (doc.content || "").toLowerCase();
-      return words.some(word => contentLower.includes(word));
+      const filePathLower = (doc.file_path || "").toLowerCase();
+      
+      let score = 0;
+      keywords.forEach(word => {
+        // Berikan bonus skor besar jika kata kunci ada di judul/jalur file
+        if (filePathLower.includes(word)) score += 10;
+        
+        // Hitung frekuensi kemunculan kata kunci di dalam isi teks dokumen
+        const matches = contentLower.match(new RegExp(word, "g"));
+        if (matches) score += matches.length;
+      });
+
+      return { ...doc, score };
     });
 
-    // 4. Ambil maksimal 3 dokumen teratas yang paling cocok
-    const contextText = matchedDocs
-      .slice(0, 3)
-      .map((doc: any) => doc.content)
+    // 4. Saring dokumen bernilai, urutkan dari yang paling relevan, ambil maksimal 2 file saja
+    const bestDocs = scoredDocs
+      .filter(doc => doc.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 2);
+
+    // 5. Gabungkan isi dokumen dan batasi panjang teks maksimal 1800 karakter agar aman dari limitasi Groq
+    const contextText = bestDocs
+      .map((doc: any) => {
+        if (doc.content.length > 1800) {
+          return doc.content.substring(0, 1800) + "\n...(Teks dipotong demi efisiensi sistem)";
+        }
+        return doc.content;
+      })
       .join("\n\n");
 
     return contextText;
