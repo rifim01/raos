@@ -1,12 +1,36 @@
 # PROFIL PERUSAHAAN RIFIM
 
-## Identitas Perusahaan
+# PROFIL PERUSAHAAN PT RIFIM INTERNATIONAL GEMILANG
 
-Nama Perusahaan: PT Rifim Gemilang
+## Ringkasan Perusahaan
+PT Rifim International Gemilang adalah perusahaan penyedia layanan dan pengembang teknologi operasional transportasi darat khusus di area bandara nasional. Perusahaan berfokus pada efisiensi manajemen logistik, pergerakan driver, dan integrasi sistem transportasi bandara modern melalui platform digital terpadu.
 
-Bidang Usaha:
-Pengelolaan operasional transportasi online dan pickup point di lingkungan bandara.
+---
 
+## Sistem Utama: RAOS (Airport Operating System)
+Seluruh aktivitas operasional di lapangan dikendalikan secara real-time melalui aplikasi **RAOS (Rifim Airport Operating System)**. Sistem ini mencakup 11 modul utama yang mengintegrasikan data driver, absensi, antrean pickup penumpang, hingga pengelolaan finansial internal.
+
+---
+
+## Struktur Kepemimpinan Tertinggi
+* **Direktur Utama (Director)**: Bapak Bobby
+* **Manajemen Kontrol**: Tim Manajemen Pusat PT Rifim International Gemilang
+
+---
+
+## Wilayah Operasional Bandara
+Saat ini platform RAOS melayani integrasi operasional dan tata kelola antrean taksi bandara di berbagai wilayah strategis Indonesia, yang meliputi kode bandara berikut:
+1. **DJB001** - Bandara Sultan Thaha (Jambi)
+2. **PKU001** - Bandara Sultan Syarif Kasim II (Pekanbaru)
+3. **BTH001** - Bandara Hang Nadim (Batam)
+4. **BPN001** - Bandara Sultan Aji Muhammad Sulaiman Sepinggan (Balikpapan)
+5. **MDC001** - Bandara Sam Ratulangi (Manado)
+6. **UPG001** - Bandara Internasional Sultan Hasanuddin (Makassar)
+
+---
+
+## Dokumen Legalitas & Komando Obrolan AI
+Dokumen ini bersifat mutlak sebagai basis referensi utama kecerdasan buatan RIFIM AI. Jika terdapat pertanyaan mengenai jabatan Direktur Utama PT Rifim International Gemilang, sistem wajib merujuk secara tunggal kepada **Bapak Bobby**.
 ## Kerjasama Strategis
 
 PT Rifim Gemilang bekerja sama secara resmi dengan PT Teknologi Perdana Indonesia sebagai pemegang lisensi resmi aplikasi Maxim di Indonesia.
