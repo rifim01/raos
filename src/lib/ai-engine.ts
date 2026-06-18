@@ -38,7 +38,7 @@ export function detectIntent(query: string): string[] {
   return intents;
 }
 
-// Vector Embedding-based knowledge search (RAG) menggunakan pgvector Supabase
+// Full-Text Search based knowledge search (RAG murni kata kunci via Supabase)
 export async function searchKnowledge(
   query: string,
   airportId: string | null,
@@ -47,38 +47,24 @@ export async function searchKnowledge(
   if (!query?.trim()) return "";
 
   try {
-    // 1. Inisialisasi OpenAI Client khusus untuk kalkulasi Vector Embedding
-    const openaiEmbeddings = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || "",
-    });
-
-    // 2. Konversi pertanyaan tekstual user menjadi koordinat Vector pintar
-    const embeddingResponse = await openaiEmbeddings.embeddings.create({
-      model: "text-embedding-3-small",
-      input: query,
-    });
-    const [{ embedding }] = embeddingResponse.data;
-
     const supabase = await createClient();
 
-    // 3. Eksekusi Pencarian Kesamaan Jarak Vektor (Similarity Search via RPC)
-    const { data: matchedContext, error } = await (supabase as any).rpc("match_knowledge", {
-      query_embedding: embedding,
-      match_threshold: 0.25, // Ambang batas kedekatan akurasi teks (25% ke atas)
-      match_count: 3         // Batasi maksimal mengambil 3 draf potongan dokumen terdekat
+    // Jalankan pencarian kata kunci langsung menggunakan fungsi text search baru di Supabase
+    const { data: matchedContext, error } = await (supabase as any).rpc("match_knowledge_text", {
+      search_query: query
     });
 
     if (error) {
-      console.error("[RIFIM AI] Gagal mencari di Supabase company_knowledge:", error.message);
+      console.error("[RIFIM AI] Gagal mencari teks di database:", error.message);
       return "";
     }
 
-    // 4. Satukan serpihan konten teks dokumen yang ditemukan sebagai basis kontekstual jawaban AI
+    // Gabungkan potongan teks yang cocok sebagai bahan referensi obrolan Groq
     const contextText = matchedContext?.map((doc: any) => doc.content).join("\n\n") || "";
 
     return contextText;
   } catch (err) {
-    console.error("[RIFIM AI] Kendala pada modul searchKnowledge engine:", err);
+    console.error("[RIFIM AI] Kendala pada searchKnowledge text engine:", err);
     return "";
   }
 }
