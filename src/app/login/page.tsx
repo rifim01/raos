@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -78,6 +77,7 @@ export default function LoginPage() {
           outline: none;
           transition: border-color 0.3s, box-shadow 0.3s;
           font-family: inherit;
+          box-sizing: border-box;
         }
         .raos-input:focus {
           border-color: #FFD400;
@@ -112,14 +112,34 @@ export default function LoginPage() {
           box-shadow: 0 10px 30px rgba(255,212,0,0.4);
           background: #ffe033;
         }
-        .raos-btn-masuk:active:not(:disabled) {
-          transform: translateY(0);
-        }
-        .raos-btn-masuk:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
+        .raos-btn-masuk:active:not(:disabled) { transform: translateY(0); }
+        .raos-btn-masuk:disabled { opacity: 0.65; cursor: not-allowed; }
         .raos-forgot:hover { color: #FFD400 !important; }
+        .raos-logo-img {
+          width: 120px;
+          height: 120px;
+          object-fit: contain;
+          border-radius: 50%;
+          filter: drop-shadow(0 0 20px rgba(255,212,0,0.5));
+          display: block;
+        }
+        .raos-header-logo {
+          width: 38px;
+          height: 38px;
+          object-fit: contain;
+          border-radius: 50%;
+          display: block;
+        }
+        .raos-footer-logo {
+          width: 34px;
+          height: 34px;
+          object-fit: contain;
+          border-radius: 50%;
+          filter: drop-shadow(0 0 8px rgba(255,212,0,0.7));
+          opacity: 0.92;
+          display: block;
+          flex-shrink: 0;
+        }
       `}</style>
 
       {/* ===== BACKGROUND FULLSCREEN ===== */}
@@ -140,8 +160,7 @@ export default function LoginPage() {
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "linear-gradient(135deg, rgba(255,212,0,0.45) 0%, rgba(180,110,0,0.40) 45%, rgba(60,30,0,0.60) 100%)",
+          background: "linear-gradient(135deg, rgba(255,212,0,0.40) 0%, rgba(180,110,0,0.35) 45%, rgba(60,30,0,0.55) 100%)",
           zIndex: 1,
         }}
       />
@@ -175,12 +194,11 @@ export default function LoginPage() {
           height: 60,
         }}
       >
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/logo-menala.png"
-          alt="PT Menala Internasional Gemilang"
-          width={38}
-          height={38}
-          style={{ objectFit: "contain", borderRadius: "50%" }}
+          alt="PT Menala"
+          className="raos-header-logo"
         />
         <div
           style={{
@@ -217,8 +235,7 @@ export default function LoginPage() {
           WebkitBackdropFilter: "blur(18px)",
           border: "1px solid rgba(255,255,255,0.15)",
           borderRadius: 20,
-          boxShadow:
-            "0 20px 60px rgba(0,0,0,0.35), 0 0 40px rgba(255,212,0,0.20)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.35), 0 0 40px rgba(255,212,0,0.20)",
           padding: "44px 40px 40px",
           display: "flex",
           flexDirection: "column",
@@ -233,28 +250,18 @@ export default function LoginPage() {
             left: "20%",
             width: "60%",
             height: 2,
-            background:
-              "linear-gradient(90deg, transparent, #FFD400, transparent)",
+            background: "linear-gradient(90deg, transparent, #FFD400, transparent)",
             borderRadius: 2,
           }}
         />
 
         {/* ===== LOGO UTAMA ===== */}
-        <div
-          style={{
-            marginBottom: 20,
-            filter: "drop-shadow(0 0 20px rgba(255,212,0,0.5))",
-          }}
-        >
-          <Image
+        <div style={{ marginBottom: 20 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo-menala.png"
             alt="PT Menala Internasional Gemilang"
-            width={120}
-            height={120}
-            style={{
-              objectFit: "contain",
-              borderRadius: "50%",
-            }}
+            className="raos-logo-img"
           />
         </div>
 
@@ -278,13 +285,14 @@ export default function LoginPage() {
         <p
           style={{
             color: "#FFD400",
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 600,
             letterSpacing: 2.5,
             textTransform: "uppercase",
             textAlign: "center",
             marginBottom: 32,
             textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+            whiteSpace: "nowrap",
           }}
         >
           ONE PLATFORM. ALL AIRPORTS. FULL CONTROL.
@@ -466,17 +474,11 @@ export default function LoginPage() {
           whiteSpace: "nowrap",
         }}
       >
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/logo-menala.png"
           alt="Logo"
-          width={34}
-          height={34}
-          style={{
-            objectFit: "contain",
-            borderRadius: "50%",
-            filter: "drop-shadow(0 0 8px rgba(255,212,0,0.7))",
-            opacity: 0.92,
-          }}
+          className="raos-footer-logo"
         />
         <div style={{ textAlign: "center" }}>
           <div
