@@ -87,9 +87,10 @@ export async function searchKnowledge(
     });
 
     // 4. Saring dokumen bernilai, urutkan dari yang paling relevan, ambil maksimal 2 file saja
+    // Perbaikan Eksplisit Tipe Data (doc: any), (a: any), dan (b: any) untuk meloloskan Vercel Build Checker
     const bestDocs = scoredDocs
-      .filter(doc => doc.score > 0)
-      .sort((a, b) => b.score - a.score)
+      .filter((doc: any) => doc.score > 0)
+      .sort((a: any, b: any) => b.score - a.score)
       .slice(0, 2);
 
     // 5. Gabungkan isi dokumen dan batasi panjang teks maksimal 1800 karakter agar aman dari limitasi Groq
