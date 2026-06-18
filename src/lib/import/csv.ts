@@ -26,7 +26,7 @@ export function buildGoogleSheetCsvUrl(airportCode: string): string {
 }
 
 /**
- * Fungsi parser CSV (Diekspor dengan nama parseCSV untuk API route lama)
+ * Fungsi parser CSV standar
  */
 export function parseCSV(text: string): any[] {
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
@@ -39,14 +39,28 @@ export function parseCSV(text: string): any[] {
   });
 }
 
-// Menyediakan alias huruf kecil jika ada modul lain yang memanggilnya
+// Menyediakan alias huruf kecil jika diperlukan oleh modul lain
 export { parseCSV as parseCsv };
 
 /**
- * Fungsi mengambil data dari Google Sheet (Diekspor sebagai fetchSheetCsv untuk API lama)
+ * Mengambil data dari Google Sheet.
+ * Dibuat fleksibel agar mendukung pemanggilan lama (2 argumen dari route.ts) 
+ * maupun pemanggilan baru (1 argumen dari staff.ts / drivers.ts).
  */
-export async function fetchSheetCsv(airportCode: string): Promise<any[]> {
-  const url = buildGoogleSheetCsvUrl(airportCode);
+export async function fetchSheetCsv(
+  input: string,
+  options?: { airportCode?: string; driverType?: string }
+): Promise<any[]> {
+  let url = input;
+
+  // Tentukan kode bandara tujuan: prioritas dari objek opsi, atau dari parameter input jika bukan berupa tautan HTTP
+  const targetCode = options?.airportCode || (!input.includes("http") ? input : null);
+
+  if (targetCode) {
+    // Override URL agar selalu menggunakan Sheet ID & GID resmi yang valid
+    url = buildGoogleSheetCsvUrl(targetCode);
+  }
+
   const response = await fetch(url);
   
   if (!response.ok) {
@@ -58,6 +72,6 @@ export async function fetchSheetCsv(airportCode: string): Promise<any[]> {
 }
 
 /**
- * Menyediakan alias fetchSheetRows agar script staff.ts & drivers.ts terbaru tetap berjalan lancar
+ * Menyediakan alias fetchSheetRows agar skrip sinkronisasi internal tetap selaras
  */
 export { fetchSheetCsv as fetchSheetRows };
