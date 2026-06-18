@@ -6,8 +6,21 @@ import { importLog } from "./logger";
 import { fetchSheetRows } from "./csv";
 import type { ImportError, ImportResult, SheetRow } from "./types";
 
+// src/lib/import/staff.ts
+
 const STAFF_COL = {
-  staff_code: ["ID Staff", "ID STAFF", "Kode Staff", "KODE", "staff_code", "Staff Code"],
+  // Ditambahkan Email & email sebagai fallback jika ID Staff tidak tersedia di Sheet
+  staff_code: [
+    "ID Staff", 
+    "ID STAFF", 
+    "Kode Staff", 
+    "KODE", 
+    "staff_code", 
+    "Staff Code", 
+    "Email", 
+    "EMAIL", 
+    "email"
+  ],
   nama: ["Nama", "NAMA", "Nama Staff", "full_name"],
   email: ["Email", "EMAIL"],
   jabatan: ["Jabatan", "JABATAN", "Posisi"],
