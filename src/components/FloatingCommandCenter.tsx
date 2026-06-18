@@ -1,19 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// Mengimpor tipe data "Variants" agar konfigurasi animasi lolos type checking
+// 1. Menyuntikkan useRouter untuk mengaktifkan fungsi navigasi antar tab
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
 interface CommandItem {
   id: string;
   label: string;
   icon: string;
+  path: string; // Jalur URL tujuan untuk masing-masing tab halaman
   colorClass: string;
   bgIconClass: string;
   description: string;
 }
 
 export default function FloatingCommandCenter() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [pulseActive, setPulseActive] = useState(false);
   const [alertCount] = useState(3);
@@ -26,11 +29,13 @@ export default function FloatingCommandCenter() {
     return () => clearInterval(interval);
   }, []);
 
+  // Konfigurasi pemetaan jalur menu (path) sesuai struktur sidebar MENALA OS
   const menuItems: CommandItem[] = [
     {
       id: "ai",
       label: "Rifim AI",
       icon: "🤖",
+      path: "/rifim-ai",
       colorClass: "text-[#8B5CF6]",
       bgIconClass: "bg-[#8B5CF6]/10",
       description: "AI Assistant & Knowledge Center",
@@ -39,6 +44,7 @@ export default function FloatingCommandCenter() {
       id: "tracking",
       label: "Live Tracking",
       icon: "🛰️",
+      path: "/live-tracking",
       colorClass: "text-[#22C55E]",
       bgIconClass: "bg-[#22C55E]/10",
       description: "Track Driver & Staff Locations",
@@ -47,6 +53,7 @@ export default function FloatingCommandCenter() {
       id: "map",
       label: "Peta Bandara",
       icon: "🗺️",
+      path: "/peta-bandara",
       colorClass: "text-[#3B82F6]",
       bgIconClass: "bg-[#3B82F6]/10",
       description: "Airport Operational Map",
@@ -54,7 +61,7 @@ export default function FloatingCommandCenter() {
     {
       id: "hr",
       label: "SDM",
-      icon: "👥",
+      path: "/driver", // Mengarah ke modul manajemen personil terdekat
       colorClass: "text-[#0EA5E9]",
       bgIconClass: "bg-[#0EA5E9]/10",
       description: "Employee Management",
@@ -62,14 +69,19 @@ export default function FloatingCommandCenter() {
     {
       id: "reports",
       label: "Laporan",
-      icon: "📊",
+      path: "/laporan",
       colorClass: "text-[#F59E0B]",
       bgIconClass: "bg-[#F59E0B]/10",
       description: "Reports & Analytics",
     },
   ];
 
-  // Menambahkan tipe data : Variants agar disetujui oleh TypeScript compiler
+  // Fungsi penggerak navigasi global
+  const handleNavigation = (path: string) => {
+    router.push(path);
+    setIsOpen(false); // Otomatis menutup kembali floating menu setelah tab diklik
+  };
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
@@ -88,7 +100,6 @@ export default function FloatingCommandCenter() {
     },
   };
 
-  // Menambahkan tipe data : Variants agar disetujui oleh TypeScript compiler
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     show: { 
@@ -135,6 +146,7 @@ export default function FloatingCommandCenter() {
                   key={item.id}
                   variants={itemVariants}
                   whileHover={{ scale: 1.05, x: -4 }}
+                  onClick={() => handleNavigation(item.path)} // Pemicu navigasi klik desktop
                   className="flex items-center justify-end w-full group cursor-pointer"
                 >
                   <span className="mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-slate-400 bg-slate-900/80 text-white px-2 py-1 rounded shadow-md pointer-events-none">
@@ -173,6 +185,7 @@ export default function FloatingCommandCenter() {
                     }}
                     exit={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    onClick={() => handleNavigation(item.path)} // Pemicu navigasi klik mobile
                     className="absolute w-12 h-12 flex items-center justify-center bg-white border border-slate-100 shadow-lg rounded-full touch-none cursor-pointer"
                     style={{ bottom: 0, right: 0 }}
                   >
