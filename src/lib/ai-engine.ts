@@ -38,44 +38,49 @@ export function detectIntent(query: string): string[] {
   return intents;
 }
 
-// Keyword-based knowledge search (no embedding needed)
+// Vector Embedding-based knowledge search (RAG) menggunakan pgvector Supabase
 export async function searchKnowledge(
   query: string,
   airportId: string | null,
   roleLevel: number
 ): Promise<string> {
-  const supabase = await createClient();
+  if (!query?.trim()) return "";
 
-  // Extract significant words (skip short/common words)
-  const stopWords = new Set(["yang", "dan", "di", "ke", "dari", "ini", "itu", "ada", "cara", "apa", "bagaimana", "berapa", "siapa"]);
-  const keywords = query
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 3 && !stopWords.has(w))
-    .slice(0, 4);
+  try {
+    // 1. Inisialisasi OpenAI Client khusus untuk kalkulasi Vector Embedding
+    const openaiEmbeddings = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || "",
+    });
 
-  if (!keywords.length) return "";
+    // 2. Konversi pertanyaan tekstual user menjadi koordinat Vector pintar
+    const embeddingResponse = await openaiEmbeddings.embeddings.create({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+    const [{ embedding }] = embeddingResponse.data;
 
-  const searchPattern = `%${keywords[0]}%`;
-  let q = (supabase as any)
-    .from("knowledge_chunks")
-    .select("chunk_text, knowledge_documents!inner(title, category, is_active, airport_id)")
-    .eq("knowledge_documents.is_active", true)
-    .ilike("chunk_text", searchPattern)
-    .limit(3);
+    const supabase = await createClient();
 
-  // Scope by airport if coordinator
-  if (roleLevel < 4 && airportId) {
-    q = q.or(`airport_id.is.null,airport_id.eq.${airportId}`, { referencedTable: "knowledge_documents" });
+    // 3. Eksekusi Pencarian Kesamaan Jarak Vektor (Similarity Search via RPC)
+    const { data: matchedContext, error } = await (supabase as any).rpc("match_knowledge", {
+      query_embedding: embedding,
+      match_threshold: 0.25, // Ambang batas kedekatan akurasi teks (25% ke atas)
+      match_count: 3         // Batasi maksimal mengambil 3 draf potongan dokumen terdekat
+    });
+
+    if (error) {
+      console.error("[RIFIM AI] Gagal mencari di Supabase company_knowledge:", error.message);
+      return "";
+    }
+
+    // 4. Satukan serpihan konten teks dokumen yang ditemukan sebagai basis kontekstual jawaban AI
+    const contextText = matchedContext?.map((doc: any) => doc.content).join("\n\n") || "";
+
+    return contextText;
+  } catch (err) {
+    console.error("[RIFIM AI] Kendala pada modul searchKnowledge engine:", err);
+    return "";
   }
-
-  const { data } = await q;
-  if (!data?.length) return "";
-
-  return data
-    .map((c: any) => `[${c.knowledge_documents?.title ?? ""} — ${c.knowledge_documents?.category ?? ""}]\n${c.chunk_text}`)
-    .join("\n\n---\n\n");
 }
 
 // Fetch live operational data per detected intent
