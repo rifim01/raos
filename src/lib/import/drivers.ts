@@ -36,22 +36,51 @@ const DRIVER_COL = {
     "full_name",
     "Full Name",
   ],
-  airport: ["Cabang", "CABANG", "ID Cabang", "Bandara", "BANDARA", "ID CABANG", "Airport"],
-  nomor_hp: ["Nomor HP", "HP", "No HP", "Telepon", "Phone", "No. HP", "No Telp", "Telp", "phone"],
+  airport: [
+    "Cabang",
+    "CABANG",
+    "ID Cabang",
+    "Bandara",
+    "BANDARA",
+    "ID CABANG",
+    "Airport",
+  ],
+  nomor_hp: [
+    "Nomor HP",
+    "HP",
+    "No HP",
+    "Telepon",
+    "Phone",
+    "No. HP",
+    "No Telp",
+    "Telp",
+    "phone",
+  ],
   nik: ["NIK", "Nik", "No KTP", "KTP"],
+} as const;
+
+type DriverColMap = {
+  driver_code?: string;
+  nama?: string;
+  airport?: string;
+  nomor_hp?: string;
+  nik?: string;
 };
 
-function detectDriverColumns(headers: string[]) {
+function detectDriverColumns(headers: string[]): DriverColMap {
   return Object.fromEntries(
-    Object.entries(DRIVER_COL).map(([key, candidates]) => [key, findCol(headers, candidates)])
-  ) as Record<keyof typeof DRIVER_COL, string | null>;
+    Object.entries(DRIVER_COL).map(([key, candidates]) => [
+      key,
+      findCol(headers, candidates),
+    ]),
+  ) as DriverColMap;
 }
 
 export async function importDrivers(
   supabase: SupabaseClient,
   rows: SheetRow[],
   airportId: string,
-  driverType: "INTERNAL" | "EXTERNAL" = "INTERNAL"
+  driverType: "INTERNAL" | "EXTERNAL" = "INTERNAL",
 ): Promise<ImportResult> {
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const colMap = detectDriverColumns(headers);
@@ -67,6 +96,7 @@ export async function importDrivers(
     const msg =
       "Kolom wajib tidak ditemukan. Butuh header seperti 'ID Driver' / 'Kode Driver' dan 'Nama'.";
     importLog("error", msg, { headers });
+
     return {
       success: false,
       imported: 0,
@@ -77,19 +107,25 @@ export async function importDrivers(
     };
   }
 
-  const mapped: Record<string, unknown>[] = [];
+  const mapped: Record<string, any>[] = [];
   const errors: ImportError[] = [];
   let skipped = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const driverCode = row[colMap.driver_code!]?.trim();
-    const nama = row[colMap.nama!]?.trim();
+
+    const driverCodeRaw = colMap.driver_code
+      ? row[colMap.driver_code]
+      : undefined;
+    const namaRaw = colMap.nama ? row[colMap.nama] : undefined;
+
+    const driverCode = driverCodeRaw?.toString().trim();
+    const nama = namaRaw?.toString().trim();
 
     if (!driverCode || !nama) {
       skipped++;
       errors.push({
-        row: i + 2,
+        row: i + 2, // +2 karena header di baris 1
         message: "driver_code atau nama kosong",
         code: driverCode || undefined,
       });
@@ -97,17 +133,21 @@ export async function importDrivers(
     }
 
     let targetAirportId = airportId;
-    if (colMap.airport && row[colMap.airport]?.trim()) {
-      const code = resolveAirportCode(row[colMap.airport]);
+
+    if (colMap.airport && row[colMap.airport]?.toString().trim()) {
+      const airportCell = row[colMap.airport];
+      const code = resolveAirportCode(airportCell);
+
       if (!code) {
         skipped++;
         errors.push({
           row: i + 2,
-          message: `Bandara tidak dikenal: "${row[colMap.airport]}"`,
+          message: `Bandara tidak dikenal: "${airportCell}"`,
           code: driverCode,
         });
         continue;
       }
+
       const resolved = await resolveAirportId(supabase, code);
       if (!resolved) {
         skipped++;
@@ -118,10 +158,11 @@ export async function importDrivers(
         });
         continue;
       }
+
       targetAirportId = resolved;
     }
 
-    const record: Record<string, unknown> = {
+    const record: Record<string, any> = {
       driver_code: driverCode,
       nama: toTitleCase(nama),
       airport_id: targetAirportId,
@@ -129,20 +170,24 @@ export async function importDrivers(
       status: "ACTIVE",
     };
 
-    if (colMap.nomor_hp && row[colMap.nomor_hp]?.trim()) {
+    if (colMap.nomor_hp && row[colMap.nomor_hp]?.toString().trim()) {
       record.nomor_hp = sanitizePhone(row[colMap.nomor_hp]);
     }
-    if (colMap.nik && row[colMap.nik]?.trim()) {
-      record.nik = row[colMap.nik].trim();
+
+    if (colMap.nik && row[colMap.nik]?.toString().trim()) {
+      record.nik = row[colMap.nik].toString().trim();
     }
 
     mapped.push(record);
   }
 
-  const deduped = new Map<string, Record<string, unknown>>();
+  // Dedup di memory berdasarkan airport_id + driver_code
+  const deduped = new Map<string, Record<string, any>>();
   for (const r of mapped) {
-    deduped.set(`${r.airport_id}:${r.driver_code}`, r);
+    const key = `${r.airport_id}:${r.driver_code}`;
+    deduped.set(key, r);
   }
+
   const dedupedRows = [...deduped.values()];
 
   importLog("info", "drivers ready for upsert", {
@@ -162,12 +207,11 @@ export async function importDrivers(
     };
   }
 
-  const { inserted, failed, errors: upsertErrors } = await upsertBatch(
-    supabase,
-    "drivers",
-    dedupedRows,
-    "airport_id,driver_code"
-  );
+  const {
+    inserted,
+    failed,
+    errors: upsertErrors,
+  } = await upsertBatch(supabase, "drivers", dedupedRows, "airport_id,driver_code");
 
   const allErrors = [...errors, ...upsertErrors];
   const success = inserted > 0 && failed === 0;
