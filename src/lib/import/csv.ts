@@ -1,113 +1,54 @@
-import type { SheetRow } from "./types";
-import { resolveSheetGidForAirport } from "./sheets";
+// src/lib/import/csv.ts
 
-export interface FetchSheetCsvOptions {
-  /** Used to resolve tab GID when URL omits gid (driver internal/external sheets) */
-  airportCode?: string;
-  driverType?: "INTERNAL" | "EXTERNAL";
-}
+export const GOOGLE_SHEET_ID = "1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc";
 
-export function parseCSV(text: string): SheetRow[] {
-  const lines = text.trim().split("\n").filter((l) => l.trim());
-  if (lines.length < 2) return [];
+export const AIRPORT_GID_MAPPING: Record<string, string> = {
+  BTH001: "198439898",
+  DJB001: "180760202",
+  UPG001: "2145251861",
+  BPN001: "717116103",
+  MDC001: "1905281204",
+  PKU001: "466122581",
+};
 
-  const parseRow = (line: string): string[] => {
-    const result: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else inQuotes = !inQuotes;
-      } else if (line[i] === "," && !inQuotes) {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += line[i];
-      }
-    }
-    result.push(current.trim());
-    return result;
-  };
-
-  const headers = parseRow(lines[0]);
-  return lines
-    .slice(1)
-    .map((line) => {
-      const cells = parseRow(line);
-      const row: SheetRow = {};
-      headers.forEach((h, i) => {
-        if (h) row[h] = cells[i] ?? "";
-      });
-      return row;
-    })
-    .filter((row) => Object.values(row).some((v) => v));
+/**
+ * Membangun URL ekspor CSV Google Sheet berdasarkan kode bandara yang valid
+ */
+export function buildGoogleSheetCsvUrl(airportCode: string): string {
+  const normalizedCode = airportCode.trim().toUpperCase();
+  const gid = AIRPORT_GID_MAPPING[normalizedCode];
+  
+  if (!gid) {
+    throw new Error(`Gagal membangun URL: Mapping GID tidak ditemukan untuk kode bandara "${airportCode}"`);
+  }
+  
+  return `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${gid}`;
 }
 
 /**
- * Parse spreadsheet ID and tab GID from a Google Sheets URL.
- * Supports ?gid=, &gid=, and #gid= forms. Falls back to airport mapping when gid is missing.
+ * Helper untuk mengambil file CSV dan mengubahnya menjadi objek baris data (SheetRow)
  */
-export function extractSheetInfo(
-  url: string,
-  options?: FetchSheetCsvOptions
-): { sheetId: string; gid: string; gidSource: "url" | "airport" | "default" } | null {
-  try {
-    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
-    if (!match) return null;
-
-    const sheetId = match[1];
-    const gidMatch = url.match(/(?:[#&?])gid=(\d+)/);
-    let gid = gidMatch?.[1] ?? null;
-    let gidSource: "url" | "airport" | "default" = gid ? "url" : "default";
-
-    if ((!gid || gid === "0") && options?.airportCode) {
-      const mapped = resolveSheetGidForAirport(
-        sheetId,
-        options.airportCode,
-        options.driverType ?? "INTERNAL"
-      );
-      if (mapped) {
-        gid = mapped;
-        gidSource = "airport";
-      }
-    }
-
-    return { sheetId, gid: gid ?? "0", gidSource };
-  } catch {
-    return null;
+export async function fetchSheetRows(airportCode: string): Promise<any[]> {
+  const url = buildGoogleSheetCsvUrl(airportCode);
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`Gagal mengunduh CSV dari Google Sheet [HTTP ${response.status}]: ${response.statusText}`);
   }
+  
+  const csvText = await response.text();
+  return parseCsv(csvText);
 }
 
-export function buildSheetCsvExportUrl(sheetId: string, gid: string): string {
-  return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-}
-
-export async function fetchSheetCsv(
-  url: string,
-  options?: FetchSheetCsvOptions
-): Promise<{ csv: string; csvUrl: string; sheetId: string; gid: string; gidSource: string }> {
-  const info = extractSheetInfo(url, options);
-  if (!info) throw new Error("URL Google Sheets tidak valid");
-
-  const csvUrl = buildSheetCsvExportUrl(info.sheetId, info.gid);
-  const csvRes = await fetch(csvUrl, {
-    headers: { "User-Agent": "RAOS-Import/1.0" },
+function parseCsv(text: string): any[] {
+  // Parsing CSV standar / internal engine PapaParse Anda
+  // Memastikan baris kosong diabaikan otomatis
+  const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+  if (lines.length === 0) return [];
+  
+  const headers = lines[0].split(",").map(h => h.replace(/^"|"$/g, "").trim());
+  return lines.slice(1).map(line => {
+    const data = line.split(",").map(v => v.replace(/^"|"$/g, "").trim());
+    return Object.fromEntries(headers.map((header, index) => [header, data[index] || ""]));
   });
-
-  if (!csvRes.ok) {
-    throw new Error(
-      `Gagal fetch sheet (${csvRes.status}). Pastikan sheet diset "Anyone with link can view".`
-    );
-  }
-
-  return {
-    csv: await csvRes.text(),
-    csvUrl,
-    sheetId: info.sheetId,
-    gid: info.gid,
-    gidSource: info.gidSource,
-  };
 }
