@@ -28,6 +28,7 @@ export default function FloatingCommandCenter() {
     return () => clearInterval(interval);
   }, []);
 
+  // Perbaikan Jalur Rute: Dipisahkan secara tegas agar tidak memuat halaman kembar
   const menuItems: CommandItem[] = [
     {
       id: "ai",
@@ -51,15 +52,15 @@ export default function FloatingCommandCenter() {
       id: "map",
       label: "Peta Bandara",
       icon: "🗺️",
-      path: "/peta-bandara",
+      path: "/command-center/tv-mode", // Diarahkan ke sub-folder tv-mode agar tampilannya berbeda dari dashboard utama
       colorClass: "text-[#3B82F6]",
       bgIconClass: "bg-[#3B82F6]/10",
-      description: "Airport Operational Map",
+      description: "Airport Operational TV Map View",
     },
     {
       id: "hr",
       label: "SDM",
-      icon: "👥", // Properti ikon yang sempat tertinggal kini sudah aman terpasang
+      icon: "👥",
       path: "/driver",
       colorClass: "text-[#0EA5E9]",
       bgIconClass: "bg-[#0EA5E9]/10",
@@ -74,10 +75,23 @@ export default function FloatingCommandCenter() {
       bgIconClass: "bg-[#F59E0B]/10",
       description: "Reports & Analytics",
     },
+    {
+      id: "logout",
+      label: "Keluar",
+      icon: "🚪",
+      path: "/login",
+      colorClass: "text-[#EF4444]",
+      bgIconClass: "bg-[#EF4444]/10",
+      description: "Sign out securely from MENALA OS",
+    },
   ];
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
+  const handleNavigation = (item: CommandItem) => {
+    if (item.id === "logout") {
+      window.location.href = item.path;
+    } else {
+      router.push(item.path);
+    }
     setIsOpen(false);
   };
 
@@ -115,7 +129,7 @@ export default function FloatingCommandCenter() {
     const endAngle = 170;
     const angleRange = endAngle - startAngle;
     const currentAngle = startAngle + (angleRange / (total - 1)) * index;
-    const radius = 105;
+    const radius = 115;
     
     const angleRad = (currentAngle * Math.PI) / 180;
     const x = -Math.cos(angleRad) * radius;
@@ -145,7 +159,7 @@ export default function FloatingCommandCenter() {
                   key={item.id}
                   variants={itemVariants}
                   whileHover={{ scale: 1.05, x: -4 }}
-                  onClick={() => handleNavigation(item.path)}
+                  onClick={() => handleNavigation(item)}
                   className="flex items-center justify-end w-full group cursor-pointer"
                 >
                   <span className="mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-slate-400 bg-slate-900/80 text-white px-2 py-1 rounded shadow-md pointer-events-none">
@@ -153,7 +167,9 @@ export default function FloatingCommandCenter() {
                   </span>
                   
                   <div className="flex items-center justify-between w-[180px] h-[48px] px-4 bg-white/95 backdrop-blur-md border border-slate-100 rounded-[24px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-200 group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
-                    <span className="text-sm font-semibold text-[#111111]">{item.label}</span>
+                    <span className={`text-sm font-semibold ${item.id === 'logout' ? 'text-[#EF4444]' : 'text-[#111111]'}`}>
+                      {item.label}
+                    </span>
                     <div className={`w-8 h-8 flex items-center justify-center rounded-full text-lg ${item.bgIconClass}`}>
                       {item.icon}
                     </div>
@@ -184,8 +200,10 @@ export default function FloatingCommandCenter() {
                     }}
                     exit={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    onClick={() => handleNavigation(item.path)}
-                    className="absolute w-12 h-12 flex items-center justify-center bg-white border border-slate-100 shadow-lg rounded-full touch-none cursor-pointer"
+                    onClick={() => handleNavigation(item)}
+                    className={`absolute w-12 h-12 flex items-center justify-center bg-white border border-slate-100 shadow-lg rounded-full touch-none cursor-pointer
+                      ${item.id === 'logout' ? 'border-red-100 bg-red-50/50' : ''}
+                    `}
                     style={{ bottom: 0, right: 0 }}
                   >
                     <span className="text-xl">{item.icon}</span>
