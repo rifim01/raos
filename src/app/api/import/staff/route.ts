@@ -1,43 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-
-const AIRPORT_CODES: Record<string, string> = {
-  "BPN001": "0e1de633-5de2-458c-bd3e-b83cb35517bd",
-  "BTH001": "1325804e-8dd5-458e-a782-80a231a09303",
-  "DJB001": "2669bd67-290d-4aa1-805f-540951592b2a",
-  "MDC001": "0587c176-e85f-4c7b-a2be-0e255e158612",
-  "PKU001": "60be8461-09f3-4f2f-b50e-ff715f91f2f4",
-  "UPG001": "3528d0a3-ba4d-43d7-a91e-40786efaae48",
-  "CGK001": "e7c34a55-86d7-4693-a02e-7b4426420ad8",
-  "BATAM": "1325804e-8dd5-458e-a782-80a231a09303",
-  "JAMBI": "2669bd67-290d-4aa1-805f-540951592b2a",
-  "MAKASSAR": "3528d0a3-ba4d-43d7-a91e-40786efaae48",
-  "BALIKPAPAN": "0e1de633-5de2-458c-bd3e-b83cb35517bd",
-  "MANADO": "0587c176-e85f-4c7b-a2be-0e255e158612",
-  "PEKANBARU": "60be8461-09f3-4f2f-b50e-ff715f91f2f4",
-};
+import { createServiceClient } from "@/lib/supabase/service";
+import { resolveAirportId } from "@/lib/import/airports";
+import { importStaff } from "@/lib/import/staff";
+import { importLog } from "@/lib/import/logger";
+import type { SheetRow } from "@/lib/import/types";
 
 export async function POST(req: NextRequest) {
   try {
-    const { rows, airport_code } = await req.json();
+    let body: { rows?: SheetRow[]; airport_code?: string };
 
-    if (!rows?.length) return NextResponse.json({ error: "No rows" }, { status: 400 });
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ success: false, error: "Request body harus JSON valid" }, { status: 400 });
+    }
 
-    const airportId = AIRPORT_CODES[airport_code?.toUpperCase()];
-    if (!airportId) return NextResponse.json({ error: `Airport tidak dikenal: ${airport_code}` }, { status: 400 });
+    const { rows, airport_code } = body;
 
-    const supabase = await createClient();
+    if (!rows?.length) {
+      importLog("warn", "staff import: empty rows");
+      return NextResponse.json({ success: false, error: "No rows" }, { status: 400 });
+    }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any).rpc("import_staff", {
-      p_rows: rows,
-      p_airport_id: airportId,
-    });
+    if (!airport_code?.trim()) {
+      return NextResponse.json({ success: false, error: "airport_code wajib diisi" }, { status: 400 });
+    }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const supabase = createServiceClient();
+    const airportId = await resolveAirportId(supabase, airport_code);
 
-    return NextResponse.json(data);
+    if (!airportId) {
+      importLog("error", "staff import: unknown airport", { airport_code });
+      return NextResponse.json(
+        { success: false, error: `Airport tidak dikenal: ${airport_code}` },
+        { status: 400 }
+      );
+    }
+
+    const result = await importStaff(supabase, rows, airportId, { fixedAirport: true });
+
+    if (!result.success) {
+      const primaryError = result.errors[0]?.message ?? "Import staff gagal";
+      importLog("error", "staff import failed", { result });
+      return NextResponse.json(
+        {
+          ...result,
+          success: false,
+          error: primaryError,
+        },
+        { status: result.imported > 0 ? 207 : 500 }
+      );
+    }
+
+    return NextResponse.json(result);
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Unknown error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Unknown error";
+    importLog("error", "staff import unhandled error", { message });
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
