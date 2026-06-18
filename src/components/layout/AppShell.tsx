@@ -4,6 +4,7 @@ import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import MobileNav from "./MobileNav";
+import PwaRegister from "@/components/shared/PwaRegister"; // <-- 1. Impor PWA Register pasif di sini
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -30,6 +31,9 @@ export default function AppShell({
 
   return (
     <div className="flex h-full overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+      {/* 2. Selipkan Service Worker Activator di baris teratas wrapper */}
+      <PwaRegister />
+
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex flex-shrink-0">
         <Sidebar
