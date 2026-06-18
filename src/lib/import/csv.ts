@@ -12,7 +12,7 @@ export const AIRPORT_GID_MAPPING: Record<string, string> = {
 };
 
 /**
- * Membangun URL ekspor CSV Google Sheet berdasarkan kode bandara yang valid
+ * Membangun URL ekspor CSV Google Sheet berdasarkan kode bandara
  */
 export function buildGoogleSheetCsvUrl(airportCode: string): string {
   const normalizedCode = airportCode.trim().toUpperCase();
@@ -26,23 +26,9 @@ export function buildGoogleSheetCsvUrl(airportCode: string): string {
 }
 
 /**
- * Helper untuk mengambil file CSV dan mengubahnya menjadi objek baris data (SheetRow)
+ * Fungsi parser CSV (Diekspor dengan nama parseCSV untuk API route lama)
  */
-export async function fetchSheetRows(airportCode: string): Promise<any[]> {
-  const url = buildGoogleSheetCsvUrl(airportCode);
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    throw new Error(`Gagal mengunduh CSV dari Google Sheet [HTTP ${response.status}]: ${response.statusText}`);
-  }
-  
-  const csvText = await response.text();
-  return parseCsv(csvText);
-}
-
-function parseCsv(text: string): any[] {
-  // Parsing CSV standar / internal engine PapaParse Anda
-  // Memastikan baris kosong diabaikan otomatis
+export function parseCSV(text: string): any[] {
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
   if (lines.length === 0) return [];
   
@@ -52,3 +38,26 @@ function parseCsv(text: string): any[] {
     return Object.fromEntries(headers.map((header, index) => [header, data[index] || ""]));
   });
 }
+
+// Menyediakan alias huruf kecil jika ada modul lain yang memanggilnya
+export { parseCSV as parseCsv };
+
+/**
+ * Fungsi mengambil data dari Google Sheet (Diekspor sebagai fetchSheetCsv untuk API lama)
+ */
+export async function fetchSheetCsv(airportCode: string): Promise<any[]> {
+  const url = buildGoogleSheetCsvUrl(airportCode);
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`Gagal mengunduh CSV dari Google Sheet [HTTP ${response.status}]: ${response.statusText}`);
+  }
+  
+  const csvText = await response.text();
+  return parseCSV(csvText);
+}
+
+/**
+ * Menyediakan alias fetchSheetRows agar script staff.ts & drivers.ts terbaru tetap berjalan lancar
+ */
+export { fetchSheetCsv as fetchSheetRows };
