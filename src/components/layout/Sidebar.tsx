@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link"; // SUDAH DIPERBAIKI: Diarahkan ke next/link dengan benar
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -16,11 +16,11 @@ const AIRPORTS = [
 ];
 
 /* ─── micro SVG wrapper ──────────────────────────────────────────────────── */
-function SI({ children, size = 17 }: { children: React.ReactNode; size?: number }) {
+function SI({ children, size = 16 }: { children: React.ReactNode; size?: number }) {
   return (
     <svg
       viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
       width={size} height={size} style={{ flexShrink: 0 }}
     >
       {children}
@@ -207,7 +207,7 @@ const IC = {
 function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
   if (collapsed) return <div className="mx-3 my-3 h-px bg-slate-100" />;
   return (
-    <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold tracking-[0.08em] uppercase text-slate-400 select-none">
+    <p className="px-4 pt-5 pb-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase text-slate-400 select-none">
       {label}
     </p>
   );
@@ -215,39 +215,58 @@ function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean 
 
 /* ─── single nav item ────────────────────────────────────────────────────── */
 function NavItem({
-  label, href, icon, active, collapsed, indent, onClick,
+  label, href, icon, active, collapsed, indent, onClick, sectionType,
 }: {
   label: string; href: string; icon: React.ReactNode;
   active: boolean; collapsed: boolean; indent?: boolean; onClick?: () => void;
+  sectionType?: string;
 }) {
+  // PENGATURAN BUBBLE WARNA DYNAMIC: Ikon dibungkus background pastel premium berbeda rumpun
+  const getBubbleColor = () => {
+    if (active) return "bg-white/35 text-black ring-1 ring-white/20";
+    switch (sectionType) {
+      case "SDM": return "bg-blue-50 text-blue-600 group-hover:bg-blue-100/80";
+      case "BANDARA": return "bg-amber-50 text-amber-600 group-hover:bg-amber-100/80";
+      case "OPERASIONAL": return "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100/80";
+      case "KEUANGAN": return "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100/80";
+      case "LAPORAN": return "bg-orange-50 text-orange-600 group-hover:bg-orange-100/80";
+      case "COMMAND": return "bg-purple-50 text-purple-600 group-hover:bg-purple-100/80";
+      case "TOOLS": return "bg-pink-50 text-pink-600 group-hover:bg-pink-100/80";
+      default: return "bg-slate-100 text-slate-600 group-hover:bg-slate-200/80";
+    }
+  };
+
   return (
     <Link
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
       className={cn(
-        "group relative flex items-center transition-all duration-200 rounded-xl mx-2 my-0.5",
-        collapsed ? "px-0 py-2.5 justify-center" : cn("py-2.5 gap-3", indent ? "pl-8 pr-3" : "px-3.5"),
+        "group relative flex items-center transition-all duration-200 mx-2.5 my-1 rounded-xl",
+        collapsed ? "px-0 py-2 justify-center" : cn("py-1.5 gap-3.5", indent ? "pl-9 pr-3" : "px-2.5"),
         active
-          ? "bg-[#FFD300] text-black shadow-[0_4px_12px_rgba(255,211,0,0.3)] font-bold scale-[1.01]"
-          : "text-slate-600 hover:bg-[#FFFBE6] hover:text-black"
+          ? "bg-[#FFD300] text-black shadow-[0_4px_20px_rgba(255,211,0,0.35)] scale-[1.02] border border-[#FFE042]"
+          : "bg-transparent text-slate-600 hover:bg-slate-50 hover:text-black"
       )}
     >
-      {/* Icon */}
-      <span className={cn("flex-shrink-0 transition-transform duration-200 group-hover:scale-105", active ? "text-black" : "text-slate-400 group-hover:text-slate-800")}>
+      {/* MODEL BUBBLE ICON: Gelembung lingkaran/kotak lembut pengapit ikon */}
+      <span className={cn(
+        "w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300 shadow-sm",
+        getBubbleColor()
+      )}>
         {icon}
       </span>
 
-      {/* Label */}
+      {/* Label Menu */}
       {!collapsed && (
-        <span className={cn("text-[13.5px] tracking-wide truncate", active ? "font-bold text-black" : "font-semibold")}>
+        <span className={cn("text-[13.5px] tracking-wide truncate", active ? "font-extrabold text-black" : "font-semibold text-slate-700 group-hover:text-black")}>
           {label}
         </span>
       )}
 
-      {/* Active pip (indent mode) */}
+      {/* Active pip sub-menu */}
       {!collapsed && active && indent && (
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-black" />
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-black/40" />
       )}
 
       {/* Collapsed tooltip */}
@@ -280,13 +299,15 @@ function BandaraSection({
             onClick={onClose}
             title={a.city}
             className={cn(
-              "group relative flex items-center justify-center mx-2 py-2.5 rounded-xl transition-all duration-200",
+              "group relative flex items-center justify-center mx-2.5 py-2.5 rounded-xl transition-all duration-200",
               isActive(`/airports/${a.code}`)
-                ? "bg-[#FFD300] text-black shadow-[0_4px_12px_rgba(255,211,0,0.3)]"
-                : "text-slate-400 hover:bg-[#FFFBE6] hover:text-slate-800"
+                ? "bg-[#FFD300] text-black shadow-[0_4px_16px_rgba(255,211,0,0.3)]"
+                : "text-slate-400 hover:bg-slate-50 hover:text-slate-900"
             )}
           >
-            {IC.mapPin}
+            <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-100">
+              {IC.mapPin}
+            </span>
             <span className="pointer-events-none absolute left-full ml-4 z-50 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white shadow-2xl opacity-0 transition-opacity group-hover:opacity-100">
               {a.city}
             </span>
@@ -300,33 +321,28 @@ function BandaraSection({
 
   return (
     <>
-      {/* Parent toggle button */}
       <button
         onClick={onToggle}
         className={cn(
-          "group w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-left outline-none",
+          "group w-[calc(100%-20px)] mx-2.5 flex items-center gap-3 px-2.5 py-1.5 rounded-xl transition-all duration-200 text-left outline-none",
           isAnyAirportActive
-            ? "text-amber-800 bg-amber-50/70 font-bold"
-            : "text-slate-600 hover:bg-[#FFFBE6] hover:text-black"
+            ? "text-amber-900 bg-amber-50 font-bold border border-amber-100"
+            : "text-slate-600 hover:bg-slate-50 hover:text-black"
         )}
       >
-        <span className={cn("transition-colors flex-shrink-0", isAnyAirportActive ? "text-amber-700" : "text-slate-400 group-hover:text-slate-700")}>
+        <span className={cn("w-8 h-8 flex items-center justify-center rounded-xl transition-all shadow-sm", 
+          isAnyAirportActive ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-600 group-hover:bg-amber-100"
+        )}>
           {IC.plane}
         </span>
         <span className="flex-1 text-[13.5px] font-semibold tracking-wide">Bandara</span>
-        <span
-          className={cn(
-            "flex-shrink-0 text-slate-400 transition-transform duration-200",
-            open ? "rotate-180 text-slate-700" : ""
-          )}
-        >
+        <span className={cn("flex-shrink-0 text-slate-400 transition-transform duration-200", open ? "rotate-180 text-slate-700" : "")}>
           {IC.chevronDown}
         </span>
       </button>
 
-      {/* Sub-items */}
       {open && (
-        <div className="mt-1 mb-1 flex flex-col pl-3 ml-4 border-l-2 border-slate-100 space-y-0.5">
+        <div className="mt-1 mb-1 flex flex-col pl-4 ml-6 border-l-2 border-slate-100 space-y-0.5">
           {airports.map((a) => {
             const href = `/airports/${a.code}`;
             const active = isActive(href);
@@ -336,18 +352,13 @@ function BandaraSection({
                 href={href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 mx-1.5 pl-4 pr-3 py-2 rounded-xl transition-all duration-150 text-[12.5px]",
+                  "flex items-center gap-3 pl-3 pr-3 py-2 rounded-xl transition-all duration-150 text-[12.5px]",
                   active
-                    ? "bg-[#FFD300] text-black font-bold shadow-[0_2px_8px_rgba(255,211,0,0.25)]"
+                    ? "bg-[#FFD300] text-black font-extrabold shadow-sm"
                     : "text-slate-500 hover:bg-[#FFFBE6] hover:text-slate-900 font-semibold"
                 )}
               >
-                <span
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full flex-shrink-0 transition-transform duration-150",
-                    active ? "bg-black scale-110" : "bg-slate-300"
-                  )}
-                />
+                <span className={cn("w-1.5 h-1.5 rounded-full transition-transform duration-150", active ? "bg-black scale-110" : "bg-slate-300")} />
                 {a.city}
               </Link>
             );
@@ -394,11 +405,11 @@ export default function Sidebar({
 
   return (
     <aside
-      className="h-full flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out shadow-[4px_0_24px_rgba(0,0,0,0.015)]"
+      className="h-full flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out shadow-[4px_0_30px_rgba(15,23,42,0.02)]"
       style={{
         width: collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-width)",
         background: "#FFFFFF",
-        borderRight: "1px solid #F1F5F9",
+        borderRight: "1px solid #F8FAFC",
       }}
     >
       {/* ── Logo ─────────────────────────────────────────────────── */}
@@ -409,68 +420,50 @@ export default function Sidebar({
         )}
         style={{ height: "var(--header-height)" }}
       >
-        <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-slate-100 transition-transform duration-300 hover:scale-105">
-          <img src="/icons/icon-512.png" alt="RIFIM" className="w-full h-full object-cover" />
+        <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-slate-100 transition-transform duration-300 hover:scale-105 bg-slate-50 p-0.5">
+          <img src="/icons/icon-512.png" alt="RIFIM" className="w-full h-full object-cover rounded-lg" />
         </div>
 
         {!collapsed && (
           <div className="flex-1 min-w-0 flex flex-col justify-center pl-0.5">
-            <p className="text-slate-900 font-black text-[14px] leading-none tracking-tight">RIFIM</p>
-            <p className="text-slate-400 text-[9px] font-bold tracking-[0.15em] uppercase mt-1">Airport OS</p>
+            <p className="text-slate-900 font-black text-[14.5px] leading-none tracking-tight">RIFIM</p>
+            <p className="text-slate-400 text-[9px] font-extrabold tracking-[0.18em] uppercase mt-1">Airport OS</p>
           </div>
         )}
 
-        {/* Mobile close */}
         {!collapsed && onClose && (
-          <button
-            onClick={onClose}
-            className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all outline-none"
-          >
-            {IC.close}
-          </button>
+          <button onClick={onClose} className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 outline-none">{IC.close}</button>
         )}
 
-        {/* Desktop collapse */}
         {!collapsed && onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            className="hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all outline-none"
-          >
-            {IC.collapseLeft}
-          </button>
+          <button onClick={onToggleCollapse} className="hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 outline-none">{IC.collapseLeft}</button>
         )}
       </div>
 
-      {/* Collapsed expand button */}
       {collapsed && onToggleCollapse && (
-        <button
-          onClick={onToggleCollapse}
-          className="hidden lg:flex mx-auto mt-4 mb-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all justify-center outline-none"
-        >
-          {IC.expandRight}
-        </button>
+        <button onClick={onToggleCollapse} className="hidden lg:flex mx-auto mt-4 mb-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 justify-center outline-none">{IC.expandRight}</button>
       )}
 
-      {/* ── Navigation (Scrollable dengan Scrollbar Halus) ─────────── */}
+      {/* ── Navigation (Scrollable Bubble Grid) ─────────────────────── */}
       <nav
-        className="flex-1 overflow-y-auto py-3 space-y-1 pr-1"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#E2E8F0 transparent" }}
+        className="flex-1 overflow-y-auto py-3 space-y-0.5 pr-1 select-none"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "#F1F5F9 transparent" }}
       >
         {/* DASHBOARD */}
         <div className="px-1">
           <NavItem
             label="Dashboard" href="/" icon={IC.home}
-            active={isActive("/")} collapsed={collapsed} onClick={onClose}
+            active={isActive("/")} collapsed={collapsed} onClick={onClose} sectionType="DASHBOARD"
           />
         </div>
 
         {/* SDM */}
         <div className="px-1">
           <SectionLabel label="SDM" collapsed={collapsed} />
-          <NavItem label="Driver"      href="/drivers"      icon={IC.car}     active={isActive("/drivers")}      collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Staff"       href="/staff"        icon={IC.badge}   active={isActive("/staff")}        collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Driver"      href="/drivers"      icon={IC.car}     active={isActive("/drivers")}      collapsed={collapsed} onClick={onClose} sectionType="SDM" />
+          <NavItem label="Staff"       href="/staff"        icon={IC.badge}   active={isActive("/staff")}        collapsed={collapsed} onClick={onClose} sectionType="SDM" />
           {showKoordinator && (
-            <NavItem label="Koordinator" href="/coordinators" icon={IC.userCog} active={isActive("/coordinators")} collapsed={collapsed} onClick={onClose} />
+            <NavItem label="Koordinator" href="/coordinators" icon={IC.userCog} active={isActive("/coordinators")} collapsed={collapsed} onClick={onClose} sectionType="SDM" />
           )}
         </div>
 
@@ -478,73 +471,60 @@ export default function Sidebar({
         {airportItems.length > 0 && (
           <div className="px-1">
             <SectionLabel label="Bandara" collapsed={collapsed} />
-            <BandaraSection
-              airports={airportItems}
-              collapsed={collapsed}
-              open={bandaraOpen}
-              onToggle={() => setBandaraOpen((o) => !o)}
-              isActive={isActive}
-              onClose={onClose}
-            />
+            <BandaraSection airports={airportItems} collapsed={collapsed} open={bandaraOpen} onToggle={() => setBandaraOpen((o) => !o)} isActive={isActive} onClose={onClose} />
           </div>
         )}
 
         {/* OPERASIONAL */}
         <div className="px-1">
           <SectionLabel label="Operasional" collapsed={collapsed} />
-          <NavItem label="Pickup Point" href="/pickup"      icon={IC.mapPinned}  active={isActive("/pickup")}      collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Absensi"      href="/attendance"  icon={IC.clock}      active={isActive("/attendance")}  collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Shift Kerja"  href="/shifts"      icon={IC.calSync}    active={isActive("/shifts")}      collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Pelanggaran"  href="/violations"  icon={IC.alert}      active={isActive("/violations")}  collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Pickup Point" href="/pickup"      icon={IC.mapPinned}  active={isActive("/pickup")}      collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+          <NavItem label="Absensi"      href="/attendance"  icon={IC.clock}      active={isActive("/attendance")}  collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+          <NavItem label="Shift Kerja"  href="/shifts"      icon={IC.calSync}    active={isActive("/shifts")}      collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+          <NavItem label="Pelanggaran"  href="/violations"  icon={IC.alert}      active={isActive("/violations")}  collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
         </div>
 
         {/* KEUANGAN */}
         <div className="px-1">
           <SectionLabel label="Keuangan" collapsed={collapsed} />
-          <NavItem label="Payroll"         href="/payroll"    icon={IC.banknote} active={isActive("/payroll")}    collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Kas Operasional" href="/finance"    icon={IC.landmark} active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Insentif"        href="/finance"    icon={IC.trophy}   active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Payroll"         href="/payroll"    icon={IC.banknote} active={isActive("/payroll")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          <NavItem label="Kas Operasional" href="/finance"    icon={IC.landmark} active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          <NavItem label="Insentif"        href="/finance"    icon={IC.trophy}   active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
         </div>
 
         {/* LAPORAN */}
         <div className="px-1">
           <SectionLabel label="Laporan" collapsed={collapsed} />
-          <NavItem label="Laporan" href="/reports" icon={IC.barChart} active={isActive("/reports")} collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Laporan" href="/reports" icon={IC.barChart} active={isActive("/reports")} collapsed={collapsed} onClick={onClose} sectionType="LAPORAN" />
         </div>
 
         {/* COMMAND CENTER */}
         {showCommandCenter && (
           <div className="px-1">
             <SectionLabel label="Command Center" collapsed={collapsed} />
-            <NavItem label="Command Center" href="/command-center" icon={IC.monitor} active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} />
-            <NavItem label="Live Tracking"   href="/tracking"       icon={IC.radar}   active={isActive("/tracking")}       collapsed={collapsed} onClick={onClose} />
-            <NavItem label="Peta Bandara"    href="/command-center" icon={IC.map}     active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} />
+            <NavItem label="Command Center" href="/command-center" icon={IC.monitor} active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Live Tracking"   href="/tracking"       icon={IC.radar}   active={isActive("/tracking")}       collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Peta Bandara"    href="/command-center" icon={IC.map}     active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
           </div>
         )}
 
         {/* AI & TOOLS */}
         <div className="px-1">
           <SectionLabel label="AI & Tools" collapsed={collapsed} />
-          <NavItem label="Rifim AI"   href="/rifim-ai"   icon={IC.sparkles} active={isActive("/rifim-ai")}   collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Dokumen"    href="/reports"    icon={IC.folder}   active={isActive("/reports")}    collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Pengaturan" href="/settings"   icon={IC.settings} active={isActive("/settings")}   collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Rifim AI"   href="/rifim-ai"   icon={IC.sparkles} active={isActive("/rifim-ai")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <NavItem label="Dokumen"    href="/reports"    icon={IC.folder}   active={isActive("/reports")}    collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <NavItem label="Pengaturan" href="/settings"   icon={IC.settings} active={isActive("/settings")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
         </div>
 
-        {/* bottom padding */}
         <div className="h-6" />
       </nav>
 
       {/* ── Footer ───────────────────────────────────────────────── */}
       {!collapsed && (
-        <div
-          className="px-5 py-4 flex-shrink-0 bg-slate-50/50"
-          style={{ borderTop: "1px solid #F1F5F9" }}
-        >
+        <div className="px-5 py-3.5 flex-shrink-0 bg-slate-50/40" style={{ borderTop: "1px solid #F8FAFC" }}>
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-            <p className="text-slate-400 text-[9px] font-bold tracking-[0.1em] uppercase truncate select-none">
-              PT RIFIM INTERNATIONAL GEMILANG
-            </p>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+            <p className="text-slate-400 text-[9px] font-extrabold tracking-[0.1em] uppercase truncate select-none">PT RIFIM INTERNATIONAL GEMILANG</p>
           </div>
         </div>
       )}
