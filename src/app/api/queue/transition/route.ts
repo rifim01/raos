@@ -12,16 +12,19 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Sesi tidak valid atau kedaluwarsa" }, { status: 401 });
     }
 
-    // 2. Ekstraksi Profil & Validasi Role
-    const { data: profile, error: profileError } = await supabase
+    // 2. Ekstraksi Profil Pengguna
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("role, airport_id")
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (profileError || !profileData) {
       return NextResponse.json({ error: "Profil otorisasi tidak ditemukan" }, { status: 403 });
     }
+
+    // Penegasan Tipe Eksplisit (Type Assertion) untuk menghindari tipe 'never'
+    const profile = profileData as { role: string; airport_id: string | null };
 
     const { queueId, transitionTo } = await req.json();
     if (!queueId || !transitionTo) {
@@ -29,15 +32,18 @@ export async function PATCH(req: NextRequest) {
     }
 
     // 3. Ambil data antrean untuk verifikasi perimeter bandara
-    const { data: targetQueue, error: queueFetchError } = await supabase
+    const { data: queueData, error: queueFetchError } = await supabase
       .from("pickup_queues")
       .select("airport_id, status")
       .eq("id", queueId)
       .single();
 
-    if (queueFetchError || !targetQueue) {
+    if (queueFetchError || !queueData) {
       return NextResponse.json({ error: "Data antrean tidak ditemukan" }, { status: 404 });
     }
+
+    // Penegasan Tipe Eksplisit untuk target antrean
+    const targetQueue = queueData as { airport_id: string; status: string };
 
     // Koordinator Bandara tidak boleh memanipulasi wilayah bandara lain
     if (profile.role === "AIRPORT_COORDINATOR" && profile.airport_id !== targetQueue.airport_id) {
