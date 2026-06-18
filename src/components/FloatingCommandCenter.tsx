@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// 1. Menyuntikkan useRouter untuk mengaktifkan fungsi navigasi antar tab
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
@@ -9,7 +8,7 @@ interface CommandItem {
   id: string;
   label: string;
   icon: string;
-  path: string; // Jalur URL tujuan untuk masing-masing tab halaman
+  path: string;
   colorClass: string;
   bgIconClass: string;
   description: string;
@@ -29,7 +28,6 @@ export default function FloatingCommandCenter() {
     return () => clearInterval(interval);
   }, []);
 
-  // Konfigurasi pemetaan jalur menu (path) sesuai struktur sidebar MENALA OS
   const menuItems: CommandItem[] = [
     {
       id: "ai",
@@ -61,7 +59,8 @@ export default function FloatingCommandCenter() {
     {
       id: "hr",
       label: "SDM",
-      path: "/driver", // Mengarah ke modul manajemen personil terdekat
+      icon: "👥", // Properti ikon yang sempat tertinggal kini sudah aman terpasang
+      path: "/driver",
       colorClass: "text-[#0EA5E9]",
       bgIconClass: "bg-[#0EA5E9]/10",
       description: "Employee Management",
@@ -69,6 +68,7 @@ export default function FloatingCommandCenter() {
     {
       id: "reports",
       label: "Laporan",
+      icon: "📊",
       path: "/laporan",
       colorClass: "text-[#F59E0B]",
       bgIconClass: "bg-[#F59E0B]/10",
@@ -76,10 +76,9 @@ export default function FloatingCommandCenter() {
     },
   ];
 
-  // Fungsi penggerak navigasi global
   const handleNavigation = (path: string) => {
     router.push(path);
-    setIsOpen(false); // Otomatis menutup kembali floating menu setelah tab diklik
+    setIsOpen(false);
   };
 
   const containerVariants: Variants = {
@@ -146,7 +145,7 @@ export default function FloatingCommandCenter() {
                   key={item.id}
                   variants={itemVariants}
                   whileHover={{ scale: 1.05, x: -4 }}
-                  onClick={() => handleNavigation(item.path)} // Pemicu navigasi klik desktop
+                  onClick={() => handleNavigation(item.path)}
                   className="flex items-center justify-end w-full group cursor-pointer"
                 >
                   <span className="mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-slate-400 bg-slate-900/80 text-white px-2 py-1 rounded shadow-md pointer-events-none">
@@ -185,7 +184,7 @@ export default function FloatingCommandCenter() {
                     }}
                     exit={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    onClick={() => handleNavigation(item.path)} // Pemicu navigasi klik mobile
+                    onClick={() => handleNavigation(item.path)}
                     className="absolute w-12 h-12 flex items-center justify-center bg-white border border-slate-100 shadow-lg rounded-full touch-none cursor-pointer"
                     style={{ bottom: 0, right: 0 }}
                   >
