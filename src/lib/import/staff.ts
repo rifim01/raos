@@ -2,21 +2,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveAirportId } from "./airports";
 import { findCol, isValidEmail, parseCurrency, resolveAirportCode, toTitleCase } from "./mapper";
-import { importLog } from "./logger";
-import { fetchSheetRows } from "./csv";
-import type { ImportError, ImportResult, SheetRow } from "./types";
+import type { ImportResult, SheetRow } from "./types";
 
 const STAFF_COL = {
-  // Menambahkan Email sebagai fallback mutlak jika ID Staff tidak disediakan di Sheet
   staff_code: ["ID Staff", "ID STAFF", "Kode Staff", "KODE", "staff_code", "Staff Code", "Email", "EMAIL", "email"],
   nama: ["Nama", "NAMA", "Nama Staff", "full_name", "NAMA STAFF"],
   email: ["Email", "EMAIL", "email"],
-  jabatan: ["Jabatan", "JABATAN", "Posisi", "POSISI"],
-  department: ["Department", "DEPARTMENT", "Dept", "DEPT"],
-  gaji_pokok: ["Gaji Staff", "GAJI STAFF", "Gaji Pokok", "GAJI POKOK", "salary_base"],
+  jabatan: ["Jabatan", "JABATAN", "Posisi"],
+  department: ["Department", "Dept"],
+  gaji_pokok: ["Gaji Staff", "Gaji Pokok", "salary_base"],
   deposit: ["Deposit", "DEPOSIT"],
-  bpjs: ["BPJS", "Bpjs Nominal", "BPJS Nominal"],
-  kuota: ["Kuota", "KUOTA", "Kuota Nominal"],
+  bpjs: ["BPJS", "Bpjs Nominal"],
+  kuota: ["Kuota", "Kuota Nominal"],
   airport: ["ID Cabang", "ID CABANG", "Cabang", "CABANG", "Bandara", "BANDARA"],
 };
 
@@ -26,44 +23,24 @@ function detectStaffColumns(headers: string[]) {
   ) as Record<keyof typeof STAFF_COL, string | null>;
 }
 
-/**
- * Fungsi Otomatis Sinkronisasi Berbasis Kode Bandara
- */
 export async function syncStaffAirport(supabase: SupabaseClient, airportCode: string): Promise<void> {
   const normalizedCode = airportCode.trim().toUpperCase();
   try {
     const allRows = await fetchSheetRows(normalizedCode, { isStaff: true });
     const airportId = await resolveAirportId(supabase, normalizedCode);
-    if (!airportId) throw new Error(`Airport ID tidak ditemukan di database.`);
-
-    const headers = allRows.length ? Object.keys(allRows[0]) : [];
-    const colMap = detectStaffColumns(headers);
-    
-    if (!colMap.airport) throw new Error("Kolom identitas cabang tidak ditemukan di file Excel.");
-
-    // Filter baris data agar hanya memproses staff milik cabang aktif saat ini
-    const filteredRows = allRows.filter((row: any) => {
-      const rawBranch = row[colMap.airport!] || "";
-      const resolvedCode = resolveAirportCode(rawBranch) || "";
-      return resolvedCode.trim().toUpperCase() === normalizedCode;
-    });
-
-    await importStaff(supabase, filteredRows, airportId, { fixedAirport: true });
+    if (!airportId) throw new Error("Airport ID tidak ditemukan.");
+    await importStaff(supabase, allRows, airportId, { fixedAirport: true });
   } catch (err: any) {
-    console.error(`Gagal melakukan sinkronisasi otomatis staff: ${err.message}`);
+    console.error(`Gagal sinkronisasi staff otomatis: ${err.message}`);
   }
 }
 
-/**
- * Fungsi Impor Inti (Mendukung 4 Argumen Penuh untuk Mencegah Error Kompilasi Vercel)
- */
 export async function importStaff(
   supabase: SupabaseClient,
   rows: SheetRow[],
   airportId: string,
   options?: { fixedAirport?: boolean }
 ): Promise<ImportResult> {
-  const fixedAirport = options?.fixedAirport ?? true;
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const colMap = detectStaffColumns(headers);
 
@@ -78,34 +55,33 @@ export async function importStaff(
     };
   }
 
-  // Ambil data aktif dari database untuk mendeteksi penghapusan data
-  const { data: existingStaff } = await supabase
-    .from("staff")
-    .select("staff_code")
-    .eq("airport_id", airportId)
-    .eq("is_active", true);
+  // Identifikasi kode resmi dari target bandara pemroses saat ini
+  const { data: airportObj } = await supabase.from("airports").select("code").eq("id", airportId).maybeSingle();
+  const currentProcessingCode = airportObj?.code?.trim().toUpperCase();
 
+  const { data: existingStaff } = await supabase.from("staff").select("staff_code").eq("airport_id", airportId).eq("is_active", true);
   const existingCodesMap = new Set(existingStaff?.map(s => s.staff_code) || []);
+  
   const processedRowsMap = new Map<string, Record<string, any>>();
   let duplicateRemovedCount = 0;
+  let skippedCrossAirportCount = 0;
 
   for (const row of rows) {
     const staffCode = row[colMap.staff_code!]?.trim();
     const nama = row[colMap.nama!]?.trim();
     if (!staffCode || !nama) continue;
 
-    let targetAirportId = airportId;
-    if (!fixedAirport && colMap.airport) {
-      const rawAirport = row[colMap.airport];
-      const code = resolveAirportCode(rawAirport);
-      if (code) {
-        const resolved = await resolveAirportId(supabase, code);
-        if (resolved) targetAirportId = resolved;
+    // PROTECTION FILTER: Singkirkan baris data milik bandara lain agar tidak bocor/ganda lintas wilayah
+    if (colMap.airport && row[colMap.airport] && currentProcessingCode) {
+      const rowAirportCode = resolveAirportCode(row[colMap.airport])?.trim().toUpperCase();
+      if (rowAirportCode !== currentProcessingCode) {
+        skippedCrossAirportCount++;
+        continue; 
       }
     }
 
     const record: Record<string, any> = {
-      airport_id: targetAirportId,
+      airport_id: airportId,
       staff_code: staffCode,
       nama: toTitleCase(nama),
       jabatan: colMap.jabatan ? row[colMap.jabatan]?.trim() || "Staff" : "Staff",
@@ -123,37 +99,27 @@ export async function importStaff(
       record.department = row[colMap.department].trim();
     }
 
-    if (processedRowsMap.has(staffCode)) {
-      duplicateRemovedCount++;
-    }
+    if (processedRowsMap.has(staffCode)) duplicateRemovedCount++;
     processedRowsMap.set(staffCode, record);
   }
 
   const finalRecords = Array.from(processedRowsMap.values());
-  
   if (finalRecords.length > 0) {
-    const { error: upsertErr } = await supabase
-      .from("staff")
-      .upsert(finalRecords, { onConflict: "airport_id,staff_code" });
-    if (upsertErr) throw upsertErr;
+    await supabase.from("staff").upsert(finalRecords, { onConflict: "airport_id,staff_code" });
   }
 
-  // Soft-deactivate data yang ada di database tapi sudah dihapus dari sheet filter cabang ini
+  // Sinkronisasi data hilang: Nonaktifkan staff di DB yang sudah tidak terdaftar di Google Sheet bandara ini
   const sheetCodes = new Set(processedRowsMap.keys());
   const toDeactivate = Array.from(existingCodesMap).filter(code => !sheetCodes.has(code));
 
   if (toDeactivate.length > 0) {
-    await supabase
-      .from("staff")
-      .update({ status: "INACTIVE", is_active: false })
-      .eq("airport_id", airportId)
-      .in("staff_code", toDeactivate);
+    await supabase.from("staff").update({ status: "INACTIVE", is_active: false }).eq("airport_id", airportId).in("staff_code", toDeactivate);
   }
 
   return {
     success: true,
     imported: finalRecords.length,
-    skipped: duplicateRemovedCount,
+    skipped: duplicateRemovedCount + skippedCrossAirportCount,
     failed: 0,
     errors: [],
     headers,
