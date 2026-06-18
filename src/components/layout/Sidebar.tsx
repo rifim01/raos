@@ -507,7 +507,7 @@ export default function Sidebar({
         {/* LAPORAN */}
         <div className="px-1.5">
           <SectionLabel label="Laporan" collapsed={collapsed} />
-          <NavItem label="Laporan" href="/reports" icon={IC.barChart} ahctive={isActive("/reports")} collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Laporan" href="/reports" icon={IC.barChart} active={isActive("/reports")} collapsed={collapsed} onClick={onClose} />
         </div>
 
         {/* COMMAND CENTER */}
