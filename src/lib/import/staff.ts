@@ -6,30 +6,18 @@ import { importLog } from "./logger";
 import { fetchSheetRows } from "./csv";
 import type { ImportError, ImportResult, SheetRow } from "./types";
 
-// src/lib/import/staff.ts
-
 const STAFF_COL = {
-  // Ditambahkan Email & email sebagai fallback jika ID Staff tidak tersedia di Sheet
-  staff_code: [
-    "ID Staff", 
-    "ID STAFF", 
-    "Kode Staff", 
-    "KODE", 
-    "staff_code", 
-    "Staff Code", 
-    "Email", 
-    "EMAIL", 
-    "email"
-  ],
-  nama: ["Nama", "NAMA", "Nama Staff", "full_name"],
-  email: ["Email", "EMAIL"],
-  jabatan: ["Jabatan", "JABATAN", "Posisi"],
-  department: ["Department", "Dept"],
-  gaji_pokok: ["Gaji Staff", "Gaji Pokok", "salary_base"],
+  // Menambahkan Email sebagai fallback mutlak jika ID Staff tidak disediakan di Sheet
+  staff_code: ["ID Staff", "ID STAFF", "Kode Staff", "KODE", "staff_code", "Staff Code", "Email", "EMAIL", "email"],
+  nama: ["Nama", "NAMA", "Nama Staff", "full_name", "NAMA STAFF"],
+  email: ["Email", "EMAIL", "email"],
+  jabatan: ["Jabatan", "JABATAN", "Posisi", "POSISI"],
+  department: ["Department", "DEPARTMENT", "Dept", "DEPT"],
+  gaji_pokok: ["Gaji Staff", "GAJI STAFF", "Gaji Pokok", "GAJI POKOK", "salary_base"],
   deposit: ["Deposit", "DEPOSIT"],
-  bpjs: ["BPJS", "Bpjs Nominal"],
-  kuota: ["Kuota", "Kuota Nominal"],
-  airport: ["ID Cabang", "ID CABANG", "Cabang", "CABANG", "Bandara"],
+  bpjs: ["BPJS", "Bpjs Nominal", "BPJS Nominal"],
+  kuota: ["Kuota", "KUOTA", "Kuota Nominal"],
+  airport: ["ID Cabang", "ID CABANG", "Cabang", "CABANG", "Bandara", "BANDARA"],
 };
 
 function detectStaffColumns(headers: string[]) {
@@ -39,22 +27,21 @@ function detectStaffColumns(headers: string[]) {
 }
 
 /**
- * Runner Sinkronisasi Otomatis Berbasis Kode Bandara
+ * Fungsi Otomatis Sinkronisasi Berbasis Kode Bandara
  */
 export async function syncStaffAirport(supabase: SupabaseClient, airportCode: string): Promise<void> {
   const normalizedCode = airportCode.trim().toUpperCase();
-  importLog("info", `Memulai sinkronisasi Master File Staff untuk Bandara: ${normalizedCode}`);
-
   try {
     const allRows = await fetchSheetRows(normalizedCode, { isStaff: true });
     const airportId = await resolveAirportId(supabase, normalizedCode);
-    if (!airportId) throw new Error(`Airport ID tidak ditemukan di DB untuk: ${normalizedCode}`);
+    if (!airportId) throw new Error(`Airport ID tidak ditemukan di database.`);
 
     const headers = allRows.length ? Object.keys(allRows[0]) : [];
     const colMap = detectStaffColumns(headers);
-    if (!colMap.airport) throw new Error("Kolom cabang tidak ditemukan pada file Master Staff.");
+    
+    if (!colMap.airport) throw new Error("Kolom identitas cabang tidak ditemukan di file Excel.");
 
-    // Filter baris data yang hanya milik bandara aktif saat ini
+    // Filter baris data agar hanya memproses staff milik cabang aktif saat ini
     const filteredRows = allRows.filter((row: any) => {
       const rawBranch = row[colMap.airport!] || "";
       const resolvedCode = resolveAirportCode(rawBranch) || "";
@@ -63,7 +50,7 @@ export async function syncStaffAirport(supabase: SupabaseClient, airportCode: st
 
     await importStaff(supabase, filteredRows, airportId, { fixedAirport: true });
   } catch (err: any) {
-    console.log(`${airportCode} (STAFF) -> Status: FAILED (${err.message})`);
+    console.error(`Gagal melakukan sinkronisasi otomatis staff: ${err.message}`);
   }
 }
 
@@ -81,10 +68,17 @@ export async function importStaff(
   const colMap = detectStaffColumns(headers);
 
   if (!colMap.staff_code || !colMap.nama) {
-    return { success: false, imported: 0, skipped: rows.length, failed: 0, errors: [{ message: "Kolom wajib hilang" }], headers };
+    return {
+      success: false,
+      imported: 0,
+      skipped: rows.length,
+      failed: 0,
+      errors: [{ message: "Kolom wajib tidak ditemukan (ID Staff/Email & Nama)" }],
+      headers,
+    };
   }
 
-  // Ambil data aktif saat ini dari database untuk validasi rekonsiliasi
+  // Ambil data aktif dari database untuk mendeteksi penghapusan data
   const { data: existingStaff } = await supabase
     .from("staff")
     .select("staff_code")
@@ -121,25 +115,30 @@ export async function importStaff(
       updated_at: new Date().toISOString(),
     };
 
-    if (processedRowsMap.has(staffCode)) duplicateRemovedCount++;
+    if (colMap.email) {
+      const email = row[colMap.email]?.trim();
+      if (email && isValidEmail(email)) record.email = email;
+    }
+    if (colMap.department && row[colMap.department]?.trim()) {
+      record.department = row[colMap.department].trim();
+    }
+
+    if (processedRowsMap.has(staffCode)) {
+      duplicateRemovedCount++;
+    }
     processedRowsMap.set(staffCode, record);
   }
 
   const finalRecords = Array.from(processedRowsMap.values());
-  let insertedCount = 0;
-  let updatedCount = 0;
-
-  finalRecords.forEach(rec => {
-    if (existingCodesMap.has(rec.staff_code)) updatedCount++;
-    else insertedCount++;
-  });
-
+  
   if (finalRecords.length > 0) {
-    const { error: upsertErr } = await supabase.from("staff").upsert(finalRecords, { onConflict: "airport_id,staff_code" });
+    const { error: upsertErr } = await supabase
+      .from("staff")
+      .upsert(finalRecords, { onConflict: "airport_id,staff_code" });
     if (upsertErr) throw upsertErr;
   }
 
-  // Otomatis nonaktifkan data lama yang sudah dihapus dari Google Sheet
+  // Soft-deactivate data yang ada di database tapi sudah dihapus dari sheet filter cabang ini
   const sheetCodes = new Set(processedRowsMap.keys());
   const toDeactivate = Array.from(existingCodesMap).filter(code => !sheetCodes.has(code));
 
@@ -151,23 +150,13 @@ export async function importStaff(
       .in("staff_code", toDeactivate);
   }
 
-  console.log(`\n===================================`);
-  console.log(`STAFF SINKRONISASI (ID Airport: ${airportId})`);
-  console.log(`Sheet Staff        : ${rows.length}`);
-  console.log(`Inserted           : ${insertedCount}`);
-  console.log(`Updated            : ${updatedCount}`);
-  console.log(`Deactivated        : ${toDeactivate.length}`);
-  console.log(`Duplicate Removed  : ${duplicateRemovedCount}`);
-  console.log(`Status             : SUCCESS`);
-  console.log(`===================================\n`);
-
   return {
     success: true,
     imported: finalRecords.length,
     skipped: duplicateRemovedCount,
     failed: 0,
     errors: [],
-    headers
+    headers,
   };
 }
 
