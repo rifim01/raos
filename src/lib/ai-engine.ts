@@ -39,7 +39,7 @@ export function detectIntent(query: string): string[] {
   return intents;
 }
 
-// Smart Scoring & Token Guard Search - Dioptimalkan Tembus RLS via Admin Client
+// Mesin Pencari Relevansi Pintar - Kebal Typo & Dioptimalkan untuk Batasan Groq TPM
 export async function searchKnowledge(
   query: string,
   airportId: string | null,
@@ -48,61 +48,63 @@ export async function searchKnowledge(
   if (!query?.trim()) return "";
 
   try {
-    // Menggunakan Admin Client dengan Service Role Key untuk bypass proteksi RLS Supabase
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
     const supabaseAdmin = createAdminClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Tarik data dari tabel basis pengetahuan dengan hak akses admin
+    // 1. Tarik seluruh dokumen internal dari database via Jalur Admin (Bypass RLS)
     const { data: allKnowledge, error } = await supabaseAdmin
       .from("company_knowledge")
       .select("content, file_path");
 
     if (error || !allKnowledge || allKnowledge.length === 0) return "";
 
-    // 2. Daftar kata eliminasi (Stop Words) agar pencarian fokus pada inti pertanyaan
-    const stopWords = new Set([
-      "siapa", "apa", "bagaimana", "mengapa", "kapan", "yang", 
-      "dan", "di", "ke", "dari", "untuk", "adalah", "tentang", 
-      "raos", "pt", "saya", "kamu", "bisa", "tolong"
-    ]);
+    // 2. Normalisasi string pertanyaan dan pecah menjadi array kata pencari
+    const cleanQuery = query.toLowerCase().replace(/[?.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ");
+    const words = cleanQuery.split(/\s+/).filter(w => w.length > 1);
 
-    const cleanQuery = query.toLowerCase().replace(/[?.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
-    const keywords = cleanQuery.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+    if (words.length === 0) return "";
 
-    if (keywords.length === 0) return "";
-
-    // 3. Hitung bobot relevansi kecocokan kata kunci pada tiap dokumen
+    // 3. Lakukan kalkulasi pembobotan nilai kecocokan teks
     const scoredDocs = allKnowledge.map((doc: any) => {
       const contentLower = (doc.content || "").toLowerCase();
       const filePathLower = (doc.file_path || "").toLowerCase();
-      
       let score = 0;
-      keywords.forEach(word => {
-        if (filePathLower.includes(word)) score += 10;
-        
-        const matches = contentLower.match(new RegExp(word, "g"));
-        if (matches) score += matches.length;
+
+      words.forEach(word => {
+        // Logika Toleransi Typo: Petakan variasi kata kunci populer ke kata asli dokumen
+        const targetWords = [word];
+        if (word === "profile" || word === "pofile") targetWords.push("profil");
+        if (word === "sopir" || word === "pengemudi") targetWords.push("driver");
+        if (word === "gaji") targetWords.push("payroll");
+
+        targetWords.forEach(tWord => {
+          // Bonus Skor Utama (+30 poin) jika kata kunci tertera di nama berkas
+          if (filePathLower.includes(tWord)) score += 30;
+          
+          // Tambah Skor Frekuensi (+2 poin per kata) untuk setiap kata yang cocok di dalam isi dokumen
+          const escapedWord = tWord.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+          const matches = contentLower.match(new RegExp(escapedWord, "g"));
+          if (matches) score += matches.length * 2;
+        });
       });
 
       return { ...doc, score };
     });
 
-    // 4. Saring dokumen bernilai, urutkan dari yang paling relevan, ambil maksimal 2 file saja
+    // 4. Saring berkas valid, urutkan dari skor tertinggi, ambil 2 dokumen terbaik
     const bestDocs = scoredDocs
       .filter((doc: any) => doc.score > 0)
       .sort((a: any, b: any) => b.score - a.score)
       .slice(0, 2);
 
-    // 5. Gabungkan isi dokumen dan batasi panjang teks maksimal 1800 karakter agar aman dari limitasi Groq
+    if (bestDocs.length === 0) return "";
+
+    // 5. Satukan potongan referensi dan batasi ketat pada 2500 karakter agar aman dari limitasi Groq
     const contextText = bestDocs
-      .map((doc: any) => {
-        if (doc.content.length > 1800) {
-          return doc.content.substring(0, 1800) + "\n...(Teks dipotong demi efisiensi sistem)";
-        }
-        return doc.content;
-      })
-      .join("\n\n");
+      .map((doc: any) => doc.content)
+      .join("\n\n")
+      .substring(0, 2500);
 
     return contextText;
   } catch (err) {
