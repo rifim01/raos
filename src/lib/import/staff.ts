@@ -2,6 +2,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveAirportId } from "./airports";
 import { findCol, isValidEmail, parseCurrency, resolveAirportCode, toTitleCase } from "./mapper";
+import { fetchSheetRows } from "./csv"; // <-- SEKARANG SUDAH DITAMBAHKAN AMAN
 import type { ImportResult, SheetRow } from "./types";
 
 const STAFF_COL = {
@@ -23,6 +24,9 @@ function detectStaffColumns(headers: string[]) {
   ) as Record<keyof typeof STAFF_COL, string | null>;
 }
 
+/**
+ * Fungsi Otomatis Sinkronisasi Berbasis Kode Bandara
+ */
 export async function syncStaffAirport(supabase: SupabaseClient, airportCode: string): Promise<void> {
   const normalizedCode = airportCode.trim().toUpperCase();
   try {
@@ -35,12 +39,16 @@ export async function syncStaffAirport(supabase: SupabaseClient, airportCode: st
   }
 }
 
+/**
+ * Fungsi Impor Inti (Mendukung 4 Argumen Penuh untuk Mencegah Error Kompilasi Vercel)
+ */
 export async function importStaff(
   supabase: SupabaseClient,
   rows: SheetRow[],
   airportId: string,
   options?: { fixedAirport?: boolean }
 ): Promise<ImportResult> {
+  const fixedAirport = options?.fixedAirport ?? true;
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const colMap = detectStaffColumns(headers);
 
