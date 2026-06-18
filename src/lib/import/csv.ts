@@ -1,9 +1,9 @@
 // src/lib/import/csv.ts
 
-export const GOOGLE_SHEET_ID = "1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc"; // Default Internal Driver File
+export const GOOGLE_SHEET_ID = "1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc";
 
 /**
- * Resolusi dinamis untuk menentukan Sheet ID dan GID yang tepat
+ * Mengotomatisasi pemilihan Sheet ID dan GID berdasarkan kode bandara dan deteksi URL
  */
 export function resolveSheetDetails(
   airportCode: string,
@@ -11,46 +11,23 @@ export function resolveSheetDetails(
 ) {
   const code = airportCode.trim().toUpperCase();
 
-  // 1. KONDISI: DATABASE STAFF (Single Master File)
   if (options?.isStaff) {
-    return {
-      sheetId: "1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw",
-      gid: "1974631595",
-    };
+    return { sheetId: "1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw", gid: "1974631595" };
   }
 
-  // 2. KONDISI: DATABASE DRIVER EXTERNAL
   if (options?.driverType === "EXTERNAL") {
-    const externalGids: Record<string, string> = {
-      BTH001: "1698812948",
-      DJB001: "674113852",
-    };
-    return {
-      sheetId: "1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc",
-      gid: externalGids[code] || "0",
-    };
+    const externalGids: Record<string, string> = { BTH001: "1698812948", DJB001: "674113852" };
+    return { sheetId: "1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc", gid: externalGids[code] || "0" };
   }
 
-  // 3. KONDISI: DATABASE DRIVER INTERNAL (Default)
   const internalGids: Record<string, string> = {
-    BTH001: "198439898",
-    DJB001: "180760202",
-    UPG001: "2145251861",
-    BPN001: "717116103",
-    MDC001: "1905281204",
-    PKU001: "466122581",
+    BTH001: "198439898", DJB001: "180760202", UPG001: "2145251861",
+    BPN001: "717116103", MDC001: "1905281204", PKU001: "466122581"
   };
-
-  return {
-    sheetId: GOOGLE_SHEET_ID,
-    gid: internalGids[code] || "0",
-  };
+  return { sheetId: GOOGLE_SHEET_ID, gid: internalGids[code] || "0" };
 }
 
-export function buildGoogleSheetCsvUrl(
-  airportCode: string,
-  options?: { isStaff?: boolean; driverType?: string }
-): string {
+export function buildGoogleSheetCsvUrl(airportCode: string, options?: { isStaff?: boolean; driverType?: string }): string {
   const { sheetId, gid } = resolveSheetDetails(airportCode, options);
   return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
 }
@@ -69,35 +46,47 @@ export function parseCSV(text: string): any[] {
 export { parseCSV as parseCsv };
 
 /**
- * Core Fetcher: Mengembalikan Hybrid Object ber-tipe 'any' 
- * Menghilangkan error TypeScript pada route.ts tanpa merusak fungsionalitas array
+ * Smart Fetcher dengan Inteceptor URL Otomatis untuk kompatibilitas API Route Lama
  */
 export async function fetchSheetCsv(
   input: string,
   options?: { airportCode?: string; driverType?: string; isStaff?: boolean }
 ): Promise<any> {
-  let url = input;
-  let targetCode = options?.airportCode || (!input.includes("http") ? input : "BTH001");
-  const { sheetId } = resolveSheetDetails(targetCode, options);
+  let url = input.trim();
+  
+  // DETEKSI OTOMATIS: Intersepsi URL dari frontend jika rute API memanggil tanpa mengirimkan opsi objek
+  const isStaffSheet = options?.isStaff || url.includes("1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw");
+  const isExternalDriver = options?.driverType === "EXTERNAL" || url.includes("1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc");
+  
+  const targetCode = options?.airportCode || (!input.includes("http") ? input : "BTH001");
+  const normalizedCode = targetCode.trim().toUpperCase();
 
-  // Jika dipanggil secara programmatic dengan kode bandara, susun URL otomatis
-  if (targetCode && (options?.isStaff || options?.driverType || !input.includes("http"))) {
-    url = buildGoogleSheetCsvUrl(targetCode, options);
+  // Override URL mentah lama menuju format eksport CSV resmi dengan GID yang akurat
+  if (isStaffSheet) {
+    url = `https://docs.google.com/spreadsheets/d/1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw/export?format=csv&gid=1974631595`;
+  } else if (isExternalDriver) {
+    const externalGids: Record<string, string> = { BTH001: "1698812948", DJB001: "674113852" };
+    url = `https://docs.google.com/spreadsheets/d/1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc/export?format=csv&gid=${externalGids[normalizedCode] || "0"}`;
+  } else {
+    const internalGids: Record<string, string> = {
+      BTH001: "198439898", DJB001: "180760202", UPG001: "2145251861",
+      BPN001: "717116103", MDC001: "1905281204", PKU001: "466122581"
+    };
+    url = `https://docs.google.com/spreadsheets/d/1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc/export?format=csv&gid=${internalGids[normalizedCode] || "0"}`;
   }
 
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Gagal unduh sheet [HTTP ${response.status}]: ${response.statusText}`);
-  }
+  if (!response.ok) throw new Error(`Gagal unduh sheet [HTTP ${response.status}]`);
 
   const csvText = await response.text();
   const rows = parseCSV(csvText);
 
-  // INI KUNCINYA: Bentuk hybrid array-object agar route.ts lama tetap membaca properti meta
   const hybridResult = rows as any;
   hybridResult.csv = csvText;
   hybridResult.csvUrl = url;
-  hybridResult.sheetId = sheetId;
+  hybridResult.sheetId = isStaffSheet 
+    ? "1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw" 
+    : (isExternalDriver ? "1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc" : GOOGLE_SHEET_ID);
 
   return hybridResult;
 }
