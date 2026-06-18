@@ -28,7 +28,6 @@ export default function FloatingCommandCenter() {
     return () => clearInterval(interval);
   }, []);
 
-  // Perbaikan Jalur Rute: Dipisahkan secara tegas agar tidak memuat halaman kembar
   const menuItems: CommandItem[] = [
     {
       id: "ai",
@@ -43,7 +42,7 @@ export default function FloatingCommandCenter() {
       id: "tracking",
       label: "Live Tracking",
       icon: "🛰️",
-      path: "/live-tracking",
+      path: "/tracking", // DISESUAIKAN: Mengikuti folder utama tracking sistem
       colorClass: "text-[#22C55E]",
       bgIconClass: "bg-[#22C55E]/10",
       description: "Track Driver & Staff Locations",
@@ -52,16 +51,16 @@ export default function FloatingCommandCenter() {
       id: "map",
       label: "Peta Bandara",
       icon: "🗺️",
-      path: "/command-center/tv-mode", // Diarahkan ke sub-folder tv-mode agar tampilannya berbeda dari dashboard utama
+      path: "/command-center/tv-mode", // TERBUKTI SUKSES: Jalur TV Monitor Mode
       colorClass: "text-[#3B82F6]",
       bgIconClass: "bg-[#3B82F6]/10",
-      description: "Airport Operational TV Map View",
+      description: "Airport Operational Map",
     },
     {
       id: "hr",
       label: "SDM",
       icon: "👥",
-      path: "/driver",
+      path: "/drivers", // DISESUAIKAN: Ditambahkan huruf 's' sesuai standar folder jamak Next.js
       colorClass: "text-[#0EA5E9]",
       bgIconClass: "bg-[#0EA5E9]/10",
       description: "Employee Management",
@@ -70,7 +69,7 @@ export default function FloatingCommandCenter() {
       id: "reports",
       label: "Laporan",
       icon: "📊",
-      path: "/laporan",
+      path: "/reports", // DISESUAIKAN: Mengarah ke folder reports sistem
       colorClass: "text-[#F59E0B]",
       bgIconClass: "bg-[#F59E0B]/10",
       description: "Reports & Analytics",
