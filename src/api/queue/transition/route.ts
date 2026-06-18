@@ -5,21 +5,19 @@ import { createClient } from "@/lib/supabase/server";
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = await createClient();
-    
-    // 1. Keamanan Level Atas: Validasi Sesi Pengguna
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
     if (authError || !user) {
       return NextResponse.json({ error: "Sesi tidak valid atau kedaluwarsa" }, { status: 401 });
     }
 
-    // 2. Ekstraksi Profil & Validasi Hak Akses Role
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("role, airport_id")
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (!profile) {
       return NextResponse.json({ error: "Profil otorisasi tidak ditemukan" }, { status: 403 });
     }
 
@@ -28,29 +26,25 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Payload parameter tidak lengkap" }, { status: 400 });
     }
 
-    // 3. Ambil data antrean yang ditargetkan untuk diverifikasi
-    const { data: targetQueue, error: queueFetchError } = await supabase
+    const { data: targetQueue } = await supabase
       .from("pickup_queues")
       .select("airport_id, status")
       .eq("id", queueId)
       .single();
 
-    if (queueFetchError || !targetQueue) {
-      return NextResponse.json({ error: "Data antrean tidak ditemukan" }, { status: 444 });
+    if (!targetQueue) {
+      return NextResponse.json({ error: "Data antrean tidak ditemukan" }, { status: 404 });
     }
 
-    // Batasi akses: Koordinator Bandara tidak boleh menyentuh wilayah bandara lain
     if (profile.role === "AIRPORT_COORDINATOR" && profile.airport_id !== targetQueue.airport_id) {
       return NextResponse.json({ error: "Pelanggaran Perimeter Hak Akses Bandara" }, { status: 403 });
     }
 
-    // 4. State Machine Execution & Mutasi Transisi Data
     const updatePayload: Record<string, any> = {
       status: transitionTo,
       updated_at: new Date().toISOString(),
     };
 
-    // Jika antrean selesai atau keluar, kosongkan urutan posisinya (set ke -1)
     if (["COMPLETED", "SUSPENDED", "NO_SHOW"].includes(transitionTo)) {
       updatePayload.position = -1;
     }
@@ -64,9 +58,7 @@ export async function PATCH(req: NextRequest) {
 
     if (updateError) throw updateError;
 
-    // 5. Otomasi Penataan Ulang Nomor Antrean Sisa (Jika ada driver yang keluar/selesai)
     if (["COMPLETED", "SUSPENDED", "NO_SHOW"].includes(transitionTo)) {
-      // Ambil semua antrean aktif tersisa di bandara tersebut untuk dirapatkan kembali posisinya
       const { data: remainingQueues } = await supabase
         .from("pickup_queues")
         .select("id")
@@ -75,7 +67,6 @@ export async function PATCH(req: NextRequest) {
         .order("position", { ascending: true });
 
       if (remainingQueues && remainingQueues.length > 0) {
-        // Lakukan pembaharuan urutan nomor indeks massal secara sekuensial
         const runReordering = remainingQueues.map((item, index) =>
           supabase
             .from("pickup_queues")
