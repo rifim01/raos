@@ -501,13 +501,13 @@ export default function Sidebar({
           <SectionLabel label="Keuangan" collapsed={collapsed} />
           <NavItem label="Payroll"         href="/payroll"    icon={IC.banknote} active={isActive("/payroll")}    collapsed={collapsed} onClick={onClose} />
           <NavItem label="Kas Operasional" href="/finance"    icon={IC.landmark} active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Insentif"        href="/incentives" icon={IC.trophy}   active={isActive("/incentives")} collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Insentif"        href="/finance" icon={IC.trophy}   active={isActive("/finance")} collapsed={collapsed} onClick={onClose} />
         </div>
 
         {/* LAPORAN */}
         <div className="px-1.5">
           <SectionLabel label="Laporan" collapsed={collapsed} />
-          <NavItem label="Laporan" href="/reports" icon={IC.barChart} active={isActive("/reports")} collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Laporan" href="/reports" icon={IC.barChart} ahctive={isActive("/reports")} collapsed={collapsed} onClick={onClose} />
         </div>
 
         {/* COMMAND CENTER */}
@@ -516,7 +516,7 @@ export default function Sidebar({
             <SectionLabel label="Command Center" collapsed={collapsed} />
             <NavItem label="Command Center" href="/command-center" icon={IC.monitor} active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} />
             <NavItem label="Live Tracking"   href="/tracking"       icon={IC.radar}   active={isActive("/tracking")}       collapsed={collapsed} onClick={onClose} />
-            <NavItem label="Peta Bandara"    href="/maps"           icon={IC.map}     active={isActive("/maps")}           collapsed={collapsed} onClick={onClose} />
+            <NavItem label="Peta Bandara"    href="/command-center"           icon={IC.map}     active={isActive("/command-center")}           collapsed={collapsed} onClick={onClose} />
           </div>
         )}
 
@@ -524,7 +524,7 @@ export default function Sidebar({
         <div className="px-1.5">
           <SectionLabel label="AI & Tools" collapsed={collapsed} />
           <NavItem label="Rifim AI"   href="/rifim-ai"   icon={IC.sparkles} active={isActive("/rifim-ai")}   collapsed={collapsed} onClick={onClose} />
-          <NavItem label="Dokumen"    href="/documents"  icon={IC.folder}   active={isActive("/documents")}  collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Dokumen"    href="/reports"  icon={IC.folder}   active={isActive("/reports")}  collapsed={collapsed} onClick={onClose} />
           <NavItem label="Pengaturan" href="/settings"   icon={IC.settings} active={isActive("/settings")}   collapsed={collapsed} onClick={onClose} />
         </div>
 
