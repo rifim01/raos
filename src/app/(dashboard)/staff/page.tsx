@@ -6,6 +6,7 @@ async function getStaff() {
     const { data } = await supabase
       .from("staff")
       .select("id, staff_code, nama, jabatan, department, status, airports(code, city)")
+      .eq("is_active", true) //  KUNCI UTAMA: Hanya mengambil staff yang aktif di Google Sheet terbaru
       .order("nama");
     return data ?? [];
   } catch { return []; }
@@ -28,6 +29,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function StaffPage() {
   const staff = await getStaff();
 
+  // Kalkulasi matriks otomatis berbasis real-time data active (Total: 22)
   const total    = staff.length;
   const aktif    = staff.filter((s: any) => s.status === "ACTIVE").length;
   const cuti     = staff.filter((s: any) => s.status === "LEAVE").length;
