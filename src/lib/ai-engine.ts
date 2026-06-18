@@ -38,7 +38,7 @@ export function detectIntent(query: string): string[] {
   return intents;
 }
 
-// Full-Text Search based knowledge search (RAG murni kata kunci via Supabase)
+// Client-Side Smart Search (Kebal dari bug tanda baca dan query database)
 export async function searchKnowledge(
   query: string,
   airportId: string | null,
@@ -49,22 +49,37 @@ export async function searchKnowledge(
   try {
     const supabase = await createClient();
 
-    // Jalankan pencarian kata kunci langsung menggunakan fungsi text search baru di Supabase
-    const { data: matchedContext, error } = await (supabase as any).rpc("match_knowledge_text", {
-      search_query: query
-    });
+    // 1. Tarik langsung data teks dari tabel company_knowledge
+    const { data: allKnowledge, error } = await (supabase as any)
+      .from("company_knowledge")
+      .select("content, file_path");
 
     if (error) {
-      console.error("[RIFIM AI] Gagal mencari teks di database:", error.message);
+      console.error("[RIFIM AI] Gagal mengambil data basis pengetahuan:", error.message);
       return "";
     }
 
-    // Gabungkan potongan teks yang cocok sebagai bahan referensi obrolan Groq
-    const contextText = matchedContext?.map((doc: any) => doc.content).join("\n\n") || "";
+    if (!allKnowledge || allKnowledge.length === 0) return "";
+
+    // 2. Bersihkan tanda baca (seperti tanda tanya) dan pecah menjadi kata kunci pencarian
+    const cleanQuery = query.toLowerCase().replace(/[?.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    const words = cleanQuery.split(/\s+/).filter(w => w.length > 2);
+
+    // 3. Filter dokumen yang mengandung kata kunci secara real-time
+    const matchedDocs = allKnowledge.filter((doc: any) => {
+      const contentLower = (doc.content || "").toLowerCase();
+      return words.some(word => contentLower.includes(word));
+    });
+
+    // 4. Ambil maksimal 3 dokumen teratas yang paling cocok
+    const contextText = matchedDocs
+      .slice(0, 3)
+      .map((doc: any) => doc.content)
+      .join("\n\n");
 
     return contextText;
   } catch (err) {
-    console.error("[RIFIM AI] Kendala pada searchKnowledge text engine:", err);
+    console.error("[RIFIM AI] Kendala pada searchKnowledge engine:", err);
     return "";
   }
 }
