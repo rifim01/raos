@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/payroll/auto-run",
+      "schedule": "0 18 25 * *"
+    }
+  ]
+}
