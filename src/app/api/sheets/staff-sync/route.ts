@@ -7,7 +7,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, X-Sync-Key",
 };
 
-const AIRPORT_MAP: Record<string, string> = {
+const AIRPORT_MAP: Record<string, string | null> = {
   "ID Rifim Airport Batam":      "1325804e-8dd5-458e-a782-80a231a09303",
   "ID Rifim Airport Jambi":      "2669bd67-290d-4aa1-805f-540951592b2a",
   "ID Rifim Airport Makassar":   "3528d0a3-ba4d-43d7-a91e-40786efaae48",
@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
     const airportId = AIRPORT_MAP[row.id_cabang?.trim()] ?? null;
 
     try {
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from("staff")
         .upsert(
           {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
             email:       row.email?.trim().toLowerCase(),
             jabatan:     row.jabatan?.trim(),
             airport_id:  airportId,
-            gaji_pokok:  row.gaji_pokok ?? null,
+            gaji_pokok:  row.gaji_pokok ?? 0,
             status:      "ACTIVE",
           },
           { onConflict: "staff_code", ignoreDuplicates: false }

@@ -37,8 +37,19 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
   const data = raw as any
   if (!data) return null
 
-  const roleRow    = data.roles    as { name: RoleName; level: number } | null
+  let roleRow = data.roles as { name: RoleName; level: number } | null
   const airportRow = data.airports as { code: string } | null
+
+  // Fallback: if the joined roles data is null (can happen when roles table
+  // RLS policy is missing), query roles directly with the role_id
+  if (!roleRow && data.role_id) {
+    const { data: roleData } = await supabase
+      .from('roles')
+      .select('name, level')
+      .eq('id', data.role_id)
+      .single()
+    roleRow = roleData as { name: RoleName; level: number } | null
+  }
 
   return {
     id:           data.id,

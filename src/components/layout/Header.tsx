@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { AIRPORTS } from "@/lib/utils";
@@ -16,8 +16,23 @@ interface HeaderProps {
 
 export default function Header({ onMenuToggle, userEmail, userName, userRole, selectedAirport = "ALL", onAirportChange }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [clock, setClock] = useState({ time: "", date: "" });
   const router = useRouter();
   const supabase = createClient();
+
+  // Run only on client to avoid SSR/CSR date mismatch (React #418)
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      setClock({
+        time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        date: now.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" }),
+      });
+    }
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -28,10 +43,6 @@ export default function Header({ onMenuToggle, userEmail, userName, userRole, se
   const initials = userName
     ? userName.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
     : userEmail?.[0]?.toUpperCase() ?? "U";
-
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-  const dateStr = now.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
 
   return (
     <header className="glass-dark flex items-center px-4 lg:px-6 gap-3 flex-shrink-0 z-30"
@@ -77,10 +88,10 @@ export default function Header({ onMenuToggle, userEmail, userName, userRole, se
         <span className="text-[10px] font-bold text-[#10B981] tracking-widest uppercase">LIVE</span>
       </div>
 
-      {/* Datetime */}
+      {/* Datetime — rendered client-side only to prevent hydration mismatch */}
       <div className="hidden lg:flex flex-col ml-1">
-        <span className="text-[10px] font-bold text-white/70 leading-tight">{timeStr}</span>
-        <span className="text-[9px] text-white/30 leading-tight uppercase tracking-wide">{dateStr}</span>
+        <span className="text-[10px] font-bold text-white/70 leading-tight">{clock.time}</span>
+        <span className="text-[9px] text-white/30 leading-tight uppercase tracking-wide">{clock.date}</span>
       </div>
 
       <div className="flex-1" />

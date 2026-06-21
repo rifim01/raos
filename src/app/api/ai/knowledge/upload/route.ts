@@ -22,7 +22,8 @@ export async function GET() {
   }
 
   const supabase = createServiceClient();
-  let query = supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
     .from("company_knowledge")
     .select("id, title, file_path, created_at, airport_id")
     .order("created_at", { ascending: false })
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from("company_knowledge")
     .insert({
       title:      body.title.trim(),
@@ -107,7 +109,8 @@ export async function DELETE(req: NextRequest) {
   }
 
   const supabase = createServiceClient();
-  const { error } = await supabase.from("company_knowledge").delete().eq("id", id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from("company_knowledge").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

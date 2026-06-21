@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       results.push({
         airport: `${airport.code} — ${airport.city}`,
         success: true,
-        processed: result?.processed ?? 0,
+        processed: result?.results?.length ?? 0,
       });
     } catch (e: unknown) {
       results.push({
