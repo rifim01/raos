@@ -1,172 +1,187 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import AttendanceClient, { type DailyRecord, type MonthlyRecord } from "./AttendanceClient";
 
-import { useState } from "react";
-import { formatDate } from "@/lib/utils";
+const WORK_START_HOUR = 7;
+const LATE_GRACE_MINUTES = 15;
 
-const TODAY = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+function determineStatus(waktu_masuk: string | null): DailyRecord["status"] {
+  if (!waktu_masuk) return "ALPHA";
+  const checkin = new Date(waktu_masuk);
+  const cutoff = new Date(checkin);
+  cutoff.setHours(WORK_START_HOUR, LATE_GRACE_MINUTES, 0, 0);
+  return checkin > cutoff ? "TERLAMBAT" : "HADIR";
+}
 
-const DEMO_ATTENDANCE = [
-  { name: "Rina Sari", airport: "BTH001", checkin: "07:58", checkout: "17:02", status: "PRESENT", shift: "Pagi" },
-  { name: "Siti Rahayu", airport: "UPG001", checkin: "08:15", checkout: null, status: "LATE", shift: "Pagi" },
-  { name: "Teguh Wibowo", airport: "PKU001", checkin: "07:45", checkout: "17:00", status: "PRESENT", shift: "Pagi" },
-  { name: "Umar Hakim", airport: "BPN001", checkin: null, checkout: null, status: "ABSENT", shift: "Malam" },
-  { name: "Vina Pratiwi", airport: "MDC001", checkin: "07:55", checkout: null, status: "PRESENT", shift: "Pagi" },
-  { name: "Wahyu Hidayat", airport: "DJB001", checkin: null, checkout: null, status: "LEAVE", shift: "Pagi" },
-];
+export default async function AttendancePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
-const STATUS_COLORS: Record<string, string> = {
-  PRESENT: "bg-green-100 text-green-700",
-  LATE: "bg-orange-100 text-orange-700",
-  ABSENT: "bg-red-100 text-red-700",
-  SICK: "bg-purple-100 text-purple-700",
-  LEAVE: "bg-blue-100 text-blue-700",
-};
+  const supabase = await createClient();
+  const today = new Date().toISOString().split("T")[0];
 
-export default function AttendancePage() {
-  const [activeTab, setActiveTab] = useState<"today" | "report" | "schedule">("today");
+  const todayLabel = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  // ── Today's attendance records ──────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let attQuery = (supabase as any)
+    .from("attendance")
+    .select(
+      `id, check_type, tanggal, created_at, distance_status, photo_url,
+       staff:staff_id(id, nama, jabatan, staff_code),
+       airport:airport_id(id, code)`
+    )
+    .eq("tanggal", today)
+    .order("created_at", { ascending: false });
+
+  if (user.role_level <= 3 && user.airport_id) {
+    attQuery = attQuery.eq("airport_id", user.airport_id);
+  }
+
+  const { data: rawRecords } = await attQuery;
+
+  // Aggregate: one DailyRecord per staff
+  type RawRow = {
+    id: string;
+    check_type: "CHECK_IN" | "CHECK_OUT";
+    created_at: string;
+    distance_status: string;
+    staff: { id: string; nama: string; jabatan: string; staff_code: string } | null;
+    airport: { id: string; code: string } | null;
+  };
+
+  const dailyMap = new Map<string, Omit<DailyRecord, "status" | "durasi_menit"> & { durasi_menit: number | null }>();
+
+  (rawRecords as RawRow[] ?? []).forEach((row) => {
+    const s = row.staff;
+    const a = row.airport;
+    if (!s) return;
+    const key = s.id;
+
+    if (!dailyMap.has(key)) {
+      dailyMap.set(key, {
+        staff_id: s.id,
+        staff_code: s.staff_code,
+        nama: s.nama,
+        jabatan: s.jabatan,
+        airport_code: a?.code ?? "",
+        waktu_masuk: null,
+        waktu_keluar: null,
+        masuk_valid: false,
+        keluar_valid: false,
+        durasi_menit: null,
+      });
+    }
+
+    const rec = dailyMap.get(key)!;
+    if (row.check_type === "CHECK_IN") {
+      if (!rec.waktu_masuk || row.created_at < rec.waktu_masuk) {
+        rec.waktu_masuk = row.created_at;
+        rec.masuk_valid = row.distance_status === "VALID";
+      }
+    } else if (row.check_type === "CHECK_OUT") {
+      if (!rec.waktu_keluar || row.created_at > rec.waktu_keluar) {
+        rec.waktu_keluar = row.created_at;
+        rec.keluar_valid = row.distance_status === "VALID";
+      }
+    }
+  });
+
+  const records: DailyRecord[] = Array.from(dailyMap.values()).map((r) => {
+    const durasi =
+      r.waktu_masuk && r.waktu_keluar
+        ? Math.round((new Date(r.waktu_keluar).getTime() - new Date(r.waktu_masuk).getTime()) / 60000)
+        : null;
+    return { ...r, status: determineStatus(r.waktu_masuk), durasi_menit: durasi };
+  });
+
+  // Sort: TERLAMBAT → HADIR → ALPHA
+  const ORDER = { TERLAMBAT: 0, HADIR: 1, ALPHA: 2 };
+  records.sort((a, b) => ORDER[a.status] - ORDER[b.status]);
+
+  // ── Total active staff count ────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let staffCountQuery = (supabase as any)
+    .from("staff")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "ACTIVE");
+
+  if (user.role_level <= 3 && user.airport_id) {
+    staffCountQuery = staffCountQuery.eq("airport_id", user.airport_id);
+  }
+
+  const { count: totalStaff } = await staffCountQuery;
+
+  // ── Monthly aggregate (current month) ──────────────────────
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let monthQuery = (supabase as any)
+    .from("attendance")
+    .select(
+      `staff_id, check_type, created_at,
+       staff:staff_id(id, nama, staff_code),
+       airport:airport_id(code)`
+    )
+    .eq("check_type", "CHECK_IN")
+    .gte("tanggal", monthStart)
+    .lte("tanggal", today);
+
+  if (user.role_level <= 3 && user.airport_id) {
+    monthQuery = monthQuery.eq("airport_id", user.airport_id);
+  }
+
+  const { data: monthRaw } = await monthQuery;
+
+  // Aggregate monthly per staff
+  const monthMap = new Map<
+    string,
+    { staff_id: string; nama: string; airport_code: string; hadir: number; terlambat: number }
+  >();
+
+  type MonthRow = {
+    staff_id: string;
+    created_at: string;
+    staff: { id: string; nama: string; staff_code: string } | null;
+    airport: { code: string } | null;
+  };
+
+  (monthRaw as MonthRow[] ?? []).forEach((row) => {
+    const s = row.staff;
+    if (!s) return;
+    if (!monthMap.has(s.id)) {
+      monthMap.set(s.id, { staff_id: s.id, nama: s.nama, airport_code: row.airport?.code ?? "", hadir: 0, terlambat: 0 });
+    }
+    const m = monthMap.get(s.id)!;
+    const status = determineStatus(row.created_at);
+    if (status === "TERLAMBAT") m.terlambat++;
+    else m.hadir++;
+  });
+
+  const workingDaysSoFar = now.getDate();
+  const monthly: MonthlyRecord[] = Array.from(monthMap.values()).map((m) => ({
+    ...m,
+    alpha: Math.max(0, workingDaysSoFar - m.hadir - m.terlambat),
+    pct_kehadiran: Math.round(((m.hadir + m.terlambat) / workingDaysSoFar) * 100),
+  }));
+  monthly.sort((a, b) => b.pct_kehadiran - a.pct_kehadiran);
+
+  const syncKey = process.env.ATTENDANCE_SYNC_KEY ?? "";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-gray-800">Attendance Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{TODAY}</p>
-        </div>
-        <button className="flex items-center gap-2 bg-[#1565C0] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#0D47A1] transition-colors">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Export Laporan
-        </button>
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          { label: "Total Staff", value: 88, color: "text-gray-700", bg: "bg-white border border-gray-200" },
-          { label: "Hadir", value: DEMO_ATTENDANCE.filter(a => a.status === "PRESENT").length, color: "text-green-700", bg: "bg-green-50" },
-          { label: "Terlambat", value: DEMO_ATTENDANCE.filter(a => a.status === "LATE").length, color: "text-orange-700", bg: "bg-orange-50" },
-          { label: "Tidak Hadir", value: DEMO_ATTENDANCE.filter(a => a.status === "ABSENT").length, color: "text-red-700", bg: "bg-red-50" },
-          { label: "Cuti", value: DEMO_ATTENDANCE.filter(a => a.status === "LEAVE").length, color: "text-blue-700", bg: "bg-blue-50" },
-        ].map((s) => (
-          <div key={s.label} className={`${s.bg} rounded-xl p-4`}>
-            <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-            <p className="text-xs font-medium text-gray-600 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {[
-          { key: "today", label: "Absensi Hari Ini" },
-          { key: "report", label: "Laporan Bulanan" },
-          { key: "schedule", label: "Jadwal Kerja" },
-        ].map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key as any)}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
-              activeTab === t.key
-                ? "border-[#1565C0] text-[#1565C0]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "today" && (
-        <div className="bg-white rounded-2xl card-shadow border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  {["Nama", "Bandara", "Shift", "Check-in", "Check-out", "Status", "Aksi"].map((h) => (
-                    <th key={h} className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {DEMO_ATTENDANCE.map((a) => (
-                  <tr key={a.name} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-[#1565C0]/10 flex items-center justify-center text-[#1565C0] font-bold text-xs flex-shrink-0">
-                          {a.name[0]}
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800">{a.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-gray-600">{a.airport}</td>
-                    <td className="px-5 py-3.5">
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">{a.shift}</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-sm font-medium text-gray-800">{a.checkin ?? "-"}</td>
-                    <td className="px-5 py-3.5 text-sm font-medium text-gray-800">{a.checkout ?? "-"}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[a.status]}`}>{a.status}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <button className="text-xs font-semibold text-[#1565C0] hover:underline">Edit</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "report" && (
-        <div className="bg-white rounded-2xl card-shadow border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <select className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none">
-              <option>Juni 2025</option><option>Mei 2025</option><option>April 2025</option>
-            </select>
-            <select className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none">
-              <option>Semua Bandara</option><option>BTH001</option><option>UPG001</option>
-            </select>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  {["Nama", "Hadir", "Terlambat", "Alpha", "Sakit", "Cuti", "% Kehadiran"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-500 text-left">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {[
-                  { name: "Rina Sari", hadir: 22, terlambat: 1, alpha: 0, sakit: 0, cuti: 0, pct: "96%" },
-                  { name: "Teguh Wibowo", hadir: 20, terlambat: 2, alpha: 1, sakit: 0, cuti: 1, pct: "87%" },
-                  { name: "Siti Rahayu", hadir: 18, terlambat: 3, alpha: 2, sakit: 1, cuti: 0, pct: "78%" },
-                ].map((r) => (
-                  <tr key={r.name} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{r.name}</td>
-                    <td className="px-4 py-3 text-green-700 font-semibold">{r.hadir}</td>
-                    <td className="px-4 py-3 text-orange-600">{r.terlambat}</td>
-                    <td className="px-4 py-3 text-red-600">{r.alpha}</td>
-                    <td className="px-4 py-3 text-purple-600">{r.sakit}</td>
-                    <td className="px-4 py-3 text-blue-600">{r.cuti}</td>
-                    <td className="px-4 py-3 font-bold text-[#1565C0]">{r.pct}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "schedule" && (
-        <div className="bg-white rounded-2xl card-shadow border border-gray-100 p-6">
-          <p className="text-sm text-gray-500 text-center py-8">
-            Jadwal kerja staff dapat dikelola di sini. Fitur shift management akan tersedia setelah koneksi Supabase aktif.
-          </p>
-        </div>
-      )}
-    </div>
+    <AttendanceClient
+      records={records}
+      totalStaff={totalStaff ?? 0}
+      todayLabel={todayLabel}
+      monthly={monthly}
+      syncKey={syncKey}
+    />
   );
 }
