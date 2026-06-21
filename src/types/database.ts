@@ -27,7 +27,7 @@ export type RecordStatus     = 'ACTIVE' | 'INACTIVE'
 
 // ─── TABLE ROW TYPES ─────────────────────────────────────────
 
-export interface Airport {
+export type Airport = {
   id:           string
   code:         string
   name:         string
@@ -42,7 +42,7 @@ export interface Airport {
   updated_at:   string
 }
 
-export interface Role {
+export type Role = {
   id:          number
   name:        RoleName
   label:       string
@@ -52,7 +52,7 @@ export interface Role {
   created_at:  string
 }
 
-export interface User {
+export type User = {
   id:           string
   auth_user_id: string | null
   airport_id:   string | null
@@ -67,7 +67,7 @@ export interface User {
   updated_at:   string
 }
 
-export interface Staff {
+export type Staff = {
   id:            string
   airport_id:    string
   user_id:       string | null
@@ -87,7 +87,7 @@ export interface Staff {
   updated_at:    string
 }
 
-export interface Kasbon {
+export type Kasbon = {
   id:                string
   staff_id:          string
   airport_id:        string
@@ -101,7 +101,7 @@ export interface Kasbon {
   updated_at:        string
 }
 
-export interface StaffSchedule {
+export type StaffSchedule = {
   id:         string
   staff_id:   string
   tanggal:    string
@@ -113,7 +113,7 @@ export interface StaffSchedule {
   updated_at: string
 }
 
-export interface Attendance {
+export type Attendance = {
   id:              string
   staff_id:        string
   airport_id:      string
@@ -130,7 +130,25 @@ export interface Attendance {
   created_at:      string
 }
 
-export interface Driver {
+export type ViolationSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type ViolationStatus   = 'OPEN' | 'REVIEWED' | 'RESOLVED' | 'DISMISSED'
+export type ViolationType     = 'GEOFENCE_EXIT' | 'LATE_CHECK_IN' | 'NO_SHOW' | 'SPEEDING' | 'ROUTE_DEVIATION' | 'UNAUTHORIZED_STOP'
+
+export type Violation = {
+  id:          string
+  airport_id:  string
+  driver_id:   string
+  type:        ViolationType
+  description: string | null
+  severity:    ViolationSeverity
+  status:      ViolationStatus
+  occurred_at: string
+  resolved_at: string | null
+  notes:       string | null
+  created_at:  string
+}
+
+export type Driver = {
   id:          string
   airport_id:  string
   user_id:     string | null
@@ -145,7 +163,7 @@ export interface Driver {
   updated_at:  string
 }
 
-export interface DriverLocation {
+export type DriverLocation = {
   id:         string
   driver_id:  string
   latitude:   number
@@ -157,7 +175,7 @@ export interface DriverLocation {
   created_at: string
 }
 
-export interface PickupQueue {
+export type PickupQueue = {
   id:           string
   airport_id:   string
   driver_id:    string
@@ -171,7 +189,7 @@ export interface PickupQueue {
   created_at:   string
 }
 
-export interface QueueHistory {
+export type QueueHistory = {
   id:         string
   queue_id:   string
   action:     string
@@ -180,7 +198,7 @@ export interface QueueHistory {
   created_at: string
 }
 
-export interface Payroll {
+export type Payroll = {
   id:               string
   staff_id:         string
   periode:          string
@@ -210,7 +228,7 @@ export interface Payroll {
   updated_at:       string
 }
 
-export interface PayrollItem {
+export type PayrollItem = {
   id:         string
   payroll_id: string
   item_name:  string
@@ -220,7 +238,7 @@ export interface PayrollItem {
   created_at: string
 }
 
-export interface FinanceTransaction {
+export type FinanceTransaction = {
   id:         string
   airport_id: string
   jenis:      FinanceJenis
@@ -234,7 +252,7 @@ export interface FinanceTransaction {
   updated_at: string
 }
 
-export interface FinanceBill {
+export type FinanceBill = {
   id:             string
   airport_id:     string
   vendor:         string
@@ -250,7 +268,7 @@ export interface FinanceBill {
   updated_at:     string
 }
 
-export interface FinanceExternalIncome {
+export type FinanceExternalIncome = {
   id:         string
   airport_id: string
   sumber:     string
@@ -262,7 +280,7 @@ export interface FinanceExternalIncome {
   created_at: string
 }
 
-export interface AirportDailyReport {
+export type AirportDailyReport = {
   id:                  string
   airport_id:          string
   report_date:         string
@@ -277,7 +295,7 @@ export interface AirportDailyReport {
   created_at:          string
 }
 
-export interface KnowledgeDocument {
+export type KnowledgeDocument = {
   id:          string
   title:       string
   category:    KnowledgeCategory
@@ -290,7 +308,7 @@ export interface KnowledgeDocument {
   updated_at:  string
 }
 
-export interface KnowledgeChunk {
+export type KnowledgeChunk = {
   id:          string
   document_id: string
   chunk_index: number
@@ -300,7 +318,7 @@ export interface KnowledgeChunk {
   created_at:  string
 }
 
-export interface AiConversation {
+export type AiConversation = {
   id:             string
   user_id:        string
   airport_id:     string | null
@@ -313,7 +331,7 @@ export interface AiConversation {
   created_at:     string
 }
 
-export interface Notification {
+export type Notification = {
   id:         string
   user_id:    string | null
   airport_id: string | null
@@ -325,7 +343,7 @@ export interface Notification {
   created_at: string
 }
 
-export interface ActivityLog {
+export type ActivityLog = {
   id:         string
   user_id:    string
   airport_id: string | null
@@ -337,7 +355,7 @@ export interface ActivityLog {
   created_at: string
 }
 
-export interface AuditLog {
+export type AuditLog = {
   id:         string
   user_id:    string | null
   table_name: string
@@ -350,7 +368,7 @@ export interface AuditLog {
 
 // ─── VIEW TYPES ───────────────────────────────────────────────
 
-export interface VwDashboardNasional {
+export type VwDashboardNasional = {
   total_airports:         number
   total_driver_aktif:     number
   total_staff_aktif:      number
@@ -363,7 +381,7 @@ export interface VwDashboardNasional {
   driver_online_sekarang: number
 }
 
-export interface VwDashboardBandara {
+export type VwDashboardBandara = {
   airport_id:     string
   airport_code:   string
   airport_name:   string
@@ -381,7 +399,7 @@ export interface VwDashboardBandara {
   tagihan_overdue: number
 }
 
-export interface VwPayrollSummary {
+export type VwPayrollSummary = {
   airport_code:      string
   airport_name:      string
   periode:           string
@@ -400,7 +418,7 @@ export interface VwPayrollSummary {
   status:            PayrollStatus
 }
 
-export interface VwDriverStatus {
+export type VwDriverStatus = {
   driver_id:     string
   driver_code:   string
   nama:          string
@@ -418,7 +436,7 @@ export interface VwDriverStatus {
   queue_join_time: string | null
 }
 
-export interface VwAttendanceSummary {
+export type VwAttendanceSummary = {
   staff_id:         string
   staff_code:       string
   nama:             string
@@ -439,39 +457,40 @@ export interface VwAttendanceSummary {
 
 // ─── SUPABASE DATABASE TYPE (untuk createClient<Database>) ───
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
-      airports:               { Row: Airport;               Insert: Omit<Airport, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<Airport, 'id'>> }
-      roles:                  { Row: Role;                  Insert: Omit<Role, 'id'|'created_at'>;                  Update: Partial<Omit<Role, 'id'>> }
-      users:                  { Row: User;                  Insert: Omit<User, 'id'|'created_at'|'updated_at'>;     Update: Partial<Omit<User, 'id'>> }
-      staff:                  { Row: Staff;                 Insert: Omit<Staff, 'id'|'created_at'|'updated_at'>;    Update: Partial<Omit<Staff, 'id'>> }
-      kasbon:                 { Row: Kasbon;                Insert: Omit<Kasbon, 'id'|'created_at'|'updated_at'>;   Update: Partial<Omit<Kasbon, 'id'>> }
-      staff_schedule:         { Row: StaffSchedule;         Insert: Omit<StaffSchedule, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<StaffSchedule, 'id'>> }
-      attendance:             { Row: Attendance;            Insert: Omit<Attendance, 'id'|'created_at'>;            Update: never }
-      drivers:                { Row: Driver;                Insert: Omit<Driver, 'id'|'created_at'|'updated_at'>;   Update: Partial<Omit<Driver, 'id'>> }
-      driver_locations:       { Row: DriverLocation;        Insert: Omit<DriverLocation, 'id'|'created_at'>;        Update: never }
-      pickup_queues:          { Row: PickupQueue;           Insert: Omit<PickupQueue, 'id'|'created_at'>;           Update: Partial<Omit<PickupQueue, 'id'>> }
-      queue_history:          { Row: QueueHistory;          Insert: Omit<QueueHistory, 'id'|'created_at'>;          Update: never }
-      payroll:                { Row: Payroll;               Insert: Omit<Payroll, 'id'|'created_at'|'updated_at'|'total_pendapatan'|'total_potongan'|'gaji_bersih'>; Update: Partial<Omit<Payroll, 'id'|'total_pendapatan'|'total_potongan'|'gaji_bersih'>> }
-      payroll_items:          { Row: PayrollItem;           Insert: Omit<PayrollItem, 'id'|'created_at'>;           Update: Partial<Omit<PayrollItem, 'id'>> }
-      finance_transactions:   { Row: FinanceTransaction;    Insert: Omit<FinanceTransaction, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<FinanceTransaction, 'id'>> }
-      finance_bills:          { Row: FinanceBill;           Insert: Omit<FinanceBill, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<FinanceBill, 'id'>> }
-      finance_external_income: { Row: FinanceExternalIncome; Insert: Omit<FinanceExternalIncome, 'id'|'created_at'>; Update: never }
-      airport_daily_reports:  { Row: AirportDailyReport;   Insert: Omit<AirportDailyReport, 'id'|'created_at'>;    Update: Partial<Omit<AirportDailyReport, 'id'>> }
-      knowledge_documents:    { Row: KnowledgeDocument;     Insert: Omit<KnowledgeDocument, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<KnowledgeDocument, 'id'>> }
-      knowledge_chunks:       { Row: KnowledgeChunk;        Insert: Omit<KnowledgeChunk, 'id'|'created_at'>;        Update: never }
-      ai_conversations:       { Row: AiConversation;        Insert: Omit<AiConversation, 'id'|'created_at'>;        Update: Partial<Omit<AiConversation, 'id'>> }
-      notifications:          { Row: Notification;          Insert: Omit<Notification, 'id'|'created_at'>;          Update: Partial<Omit<Notification, 'id'>> }
-      activity_logs:          { Row: ActivityLog;           Insert: Omit<ActivityLog, 'id'|'created_at'>;           Update: never }
-      audit_logs:             { Row: AuditLog;              Insert: Omit<AuditLog, 'id'|'created_at'>;              Update: never }
+      airports:               { Row: Airport;               Insert: Omit<Airport, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<Airport, 'id'>>; Relationships: [] }
+      roles:                  { Row: Role;                  Insert: Omit<Role, 'id'|'created_at'>;                  Update: Partial<Omit<Role, 'id'>>; Relationships: [] }
+      users:                  { Row: User;                  Insert: Omit<User, 'id'|'created_at'|'updated_at'>;     Update: Partial<Omit<User, 'id'>>; Relationships: [{ foreignKeyName: 'users_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'users_role_id_fkey', columns: ['role_id'], isOneToOne: false, referencedRelation: 'roles', referencedColumns: ['id'] }] }
+      staff:                  { Row: Staff;                 Insert: Omit<Staff, 'id'|'created_at'|'updated_at'>;    Update: Partial<Omit<Staff, 'id'>>; Relationships: [{ foreignKeyName: 'staff_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'staff_user_id_fkey', columns: ['user_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      kasbon:                 { Row: Kasbon;                Insert: Omit<Kasbon, 'id'|'created_at'|'updated_at'>;   Update: Partial<Omit<Kasbon, 'id'>>; Relationships: [{ foreignKeyName: 'kasbon_staff_id_fkey', columns: ['staff_id'], isOneToOne: false, referencedRelation: 'staff', referencedColumns: ['id'] }, { foreignKeyName: 'kasbon_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }] }
+      staff_schedule:         { Row: StaffSchedule;         Insert: Omit<StaffSchedule, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<StaffSchedule, 'id'>>; Relationships: [{ foreignKeyName: 'staff_schedule_staff_id_fkey', columns: ['staff_id'], isOneToOne: false, referencedRelation: 'staff', referencedColumns: ['id'] }] }
+      attendance:             { Row: Attendance;            Insert: Pick<Attendance, 'staff_id'|'airport_id'|'check_type'> & Partial<Omit<Attendance, 'id'|'created_at'|'staff_id'|'airport_id'|'check_type'>>; Update: never; Relationships: [{ foreignKeyName: 'attendance_staff_id_fkey', columns: ['staff_id'], isOneToOne: false, referencedRelation: 'staff', referencedColumns: ['id'] }, { foreignKeyName: 'attendance_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }] }
+      drivers:                { Row: Driver;                Insert: Omit<Driver, 'id'|'created_at'|'updated_at'>;   Update: Partial<Omit<Driver, 'id'>>; Relationships: [{ foreignKeyName: 'drivers_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'drivers_user_id_fkey', columns: ['user_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      driver_locations:       { Row: DriverLocation;        Insert: Omit<DriverLocation, 'id'|'created_at'>;        Update: never; Relationships: [{ foreignKeyName: 'driver_locations_driver_id_fkey', columns: ['driver_id'], isOneToOne: false, referencedRelation: 'drivers', referencedColumns: ['id'] }] }
+      pickup_queues:          { Row: PickupQueue;           Insert: Omit<PickupQueue, 'id'|'created_at'>;           Update: Partial<Omit<PickupQueue, 'id'>>; Relationships: [{ foreignKeyName: 'pickup_queues_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'pickup_queues_driver_id_fkey', columns: ['driver_id'], isOneToOne: false, referencedRelation: 'drivers', referencedColumns: ['id'] }] }
+      queue_history:          { Row: QueueHistory;          Insert: Omit<QueueHistory, 'id'|'created_at'>;          Update: never; Relationships: [{ foreignKeyName: 'queue_history_queue_id_fkey', columns: ['queue_id'], isOneToOne: false, referencedRelation: 'pickup_queues', referencedColumns: ['id'] }, { foreignKeyName: 'queue_history_actor_id_fkey', columns: ['actor_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      payroll:                { Row: Payroll;               Insert: Omit<Payroll, 'id'|'created_at'|'updated_at'|'total_pendapatan'|'total_potongan'|'gaji_bersih'>; Update: Partial<Omit<Payroll, 'id'|'total_pendapatan'|'total_potongan'|'gaji_bersih'>>; Relationships: [{ foreignKeyName: 'payroll_staff_id_fkey', columns: ['staff_id'], isOneToOne: false, referencedRelation: 'staff', referencedColumns: ['id'] }, { foreignKeyName: 'payroll_approved_by_fkey', columns: ['approved_by'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      payroll_items:          { Row: PayrollItem;           Insert: Omit<PayrollItem, 'id'|'created_at'>;           Update: Partial<Omit<PayrollItem, 'id'>>; Relationships: [{ foreignKeyName: 'payroll_items_payroll_id_fkey', columns: ['payroll_id'], isOneToOne: false, referencedRelation: 'payroll', referencedColumns: ['id'] }] }
+      finance_transactions:   { Row: FinanceTransaction;    Insert: Omit<FinanceTransaction, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<FinanceTransaction, 'id'>>; Relationships: [{ foreignKeyName: 'finance_transactions_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'finance_transactions_created_by_fkey', columns: ['created_by'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      finance_bills:          { Row: FinanceBill;           Insert: Omit<FinanceBill, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<FinanceBill, 'id'>>; Relationships: [{ foreignKeyName: 'finance_bills_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'finance_bills_created_by_fkey', columns: ['created_by'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      finance_external_income: { Row: FinanceExternalIncome; Insert: Omit<FinanceExternalIncome, 'id'|'created_at'>; Update: never; Relationships: [{ foreignKeyName: 'finance_external_income_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'finance_external_income_created_by_fkey', columns: ['created_by'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      airport_daily_reports:  { Row: AirportDailyReport;   Insert: Omit<AirportDailyReport, 'id'|'created_at'>;    Update: Partial<Omit<AirportDailyReport, 'id'>>; Relationships: [{ foreignKeyName: 'airport_daily_reports_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }] }
+      knowledge_documents:    { Row: KnowledgeDocument;     Insert: Omit<KnowledgeDocument, 'id'|'created_at'|'updated_at'>; Update: Partial<Omit<KnowledgeDocument, 'id'>>; Relationships: [{ foreignKeyName: 'knowledge_documents_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'knowledge_documents_uploaded_by_fkey', columns: ['uploaded_by'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      knowledge_chunks:       { Row: KnowledgeChunk;        Insert: Omit<KnowledgeChunk, 'id'|'created_at'>;        Update: never; Relationships: [{ foreignKeyName: 'knowledge_chunks_document_id_fkey', columns: ['document_id'], isOneToOne: false, referencedRelation: 'knowledge_documents', referencedColumns: ['id'] }] }
+      ai_conversations:       { Row: AiConversation;        Insert: Omit<AiConversation, 'id'|'created_at'>;        Update: Partial<Omit<AiConversation, 'id'>>; Relationships: [{ foreignKeyName: 'ai_conversations_user_id_fkey', columns: ['user_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }, { foreignKeyName: 'ai_conversations_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }] }
+      notifications:          { Row: Notification;          Insert: Omit<Notification, 'id'|'created_at'>;          Update: Partial<Omit<Notification, 'id'>>; Relationships: [{ foreignKeyName: 'notifications_user_id_fkey', columns: ['user_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }, { foreignKeyName: 'notifications_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }] }
+      activity_logs:          { Row: ActivityLog;           Insert: Omit<ActivityLog, 'id'|'created_at'>;           Update: never; Relationships: [{ foreignKeyName: 'activity_logs_user_id_fkey', columns: ['user_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }, { foreignKeyName: 'activity_logs_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }] }
+      audit_logs:             { Row: AuditLog;              Insert: Omit<AuditLog, 'id'|'created_at'>;              Update: never; Relationships: [{ foreignKeyName: 'audit_logs_user_id_fkey', columns: ['user_id'], isOneToOne: false, referencedRelation: 'users', referencedColumns: ['id'] }] }
+      violations:             { Row: Violation;             Insert: Pick<Violation, 'airport_id'|'driver_id'|'type'> & Partial<Omit<Violation, 'id'|'created_at'|'airport_id'|'driver_id'|'type'>>; Update: Partial<Omit<Violation, 'id'>>; Relationships: [{ foreignKeyName: 'violations_airport_id_fkey', columns: ['airport_id'], isOneToOne: false, referencedRelation: 'airports', referencedColumns: ['id'] }, { foreignKeyName: 'violations_driver_id_fkey', columns: ['driver_id'], isOneToOne: false, referencedRelation: 'drivers', referencedColumns: ['id'] }] }
     }
     Views: {
-      vw_dashboard_nasional:  { Row: VwDashboardNasional }
-      vw_dashboard_bandara:   { Row: VwDashboardBandara }
-      vw_payroll_summary:     { Row: VwPayrollSummary }
-      vw_driver_status:       { Row: VwDriverStatus }
-      vw_attendance_summary:  { Row: VwAttendanceSummary }
+      vw_dashboard_nasional:  { Row: VwDashboardNasional; Relationships: [] }
+      vw_dashboard_bandara:   { Row: VwDashboardBandara; Relationships: [] }
+      vw_payroll_summary:     { Row: VwPayrollSummary; Relationships: [] }
+      vw_driver_status:       { Row: VwDriverStatus; Relationships: [] }
+      vw_attendance_summary:  { Row: VwAttendanceSummary; Relationships: [] }
     }
     Functions: {
       calculate_payroll:       { Args: { p_staff_id: string; p_bulan: number; p_tahun: number }; Returns: string }
@@ -497,6 +516,9 @@ export interface Database {
       knowledge_category: KnowledgeCategory
       notification_type: NotificationType
       audit_operation:   AuditOperation
+      violation_severity: ViolationSeverity
+      violation_status:   ViolationStatus
+      violation_type:     ViolationType
     }
   }
 }

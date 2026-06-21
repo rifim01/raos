@@ -6,7 +6,7 @@ async function getStaff() {
     const { data } = await supabase
       .from("staff")
       .select("id, staff_code, nama, jabatan, department, status, airports(code, city)")
-      .eq("is_active", true) //  KUNCI UTAMA: Hanya mengambil staff yang aktif di Google Sheet terbaru
+      .eq("status", "ACTIVE") //  KUNCI UTAMA: Hanya mengambil staff yang aktif di Google Sheet terbaru
       .order("nama");
     return data ?? [];
   } catch { return []; }

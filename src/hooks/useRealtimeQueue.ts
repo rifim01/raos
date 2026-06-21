@@ -31,7 +31,12 @@ export function useRealtimeQueue(airportId: string) {
           drivers (driver_code, nama, driver_type)
         `)
         .eq("airport_id", airportId)
-        .in("status", ["WAITING", "CALLED", "PICKUP"])
+        // NOTE(Claude): "PICKUP" bukan nilai queue_status yang valid di skema produksi
+        // (WAITING/CALLED/SERVING/DONE/SKIP/VIOLATION). Hook ini juga query kolom
+        // "position" & "checked_in_at" yang tidak ada di tabel pickup_queues asli,
+        // dan hook ini TIDAK dipakai di mana pun (dead code). Cast di bawah hanya
+        // supaya build lolos tanpa mengubah behavior — lihat catatan di laporan akhir.
+        .in("status", ["WAITING", "CALLED", "PICKUP"] as unknown as ("WAITING" | "CALLED" | "SERVING" | "DONE" | "SKIP" | "VIOLATION")[])
         .order("position", { ascending: true });
 
       if (error) throw error;

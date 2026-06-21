@@ -20,41 +20,54 @@ export async function GET(req: NextRequest) {
     if (!airportId) return NextResponse.json({ rows: [] });
 
     const supabase = await createClient();
+
+    // payroll tidak punya kolom airport_id langsung — harus filter via staff_id
+    const { data: staffRows, error: staffError } = await supabase
+      .from("staff")
+      .select("id")
+      .eq("airport_id", airportId);
+
+    if (staffError) return NextResponse.json({ error: staffError.message }, { status: 500 });
+
+    const staffIds = (staffRows ?? []).map((s) => s.id);
+    if (staffIds.length === 0) return NextResponse.json({ rows: [] });
+
     const { data, error } = await supabase
       .from("payroll")
       .select(`
-        id, staff_id, airport_id, period_month, period_year,
-        salary_base, overtime_hours, overtime_pay, bonus, incentive,
-        deductions, kasbon_deduction, absence_deduction,
-        total_gross, total_net, status, paid_at,
-        staff:staff_id (full_name, position, department)
+        id, staff_id, periode, periode_bulan, periode_tahun,
+        gaji_pokok, bpjs, kuota, bonus, lembur, jam_lembur,
+        kasbon, denda_telat, potongan_alpha, deposit,
+        total_pendapatan, total_potongan, gaji_bersih,
+        total_hadir, total_terlambat, total_alpha,
+        status, approved_by, paid_at, notes,
+        staff:staff_id (nama, jabatan, department)
       `)
-      .eq("airport_id", airportId)
-      .eq("period_month", month)
-      .eq("period_year", year)
+      .in("staff_id", staffIds)
+      .eq("periode_bulan", month)
+      .eq("periode_tahun", year)
       .order("created_at");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    const rows = (data ?? []).map((r: unknown) => {
-      const row = r as Record<string, unknown>;
-      const staff = row.staff as Record<string, string> | null;
+    const rows = (data ?? []).map((row) => {
+      const staff = row.staff as { nama: string; jabatan: string; department: string | null } | null;
       return {
         id: row.id,
         staff_id: row.staff_id,
-        staff_name: staff?.full_name ?? "-",
-        position: staff?.position ?? "-",
+        staff_name: staff?.nama ?? "-",
+        position: staff?.jabatan ?? "-",
         department: staff?.department ?? "-",
-        salary_base: Number(row.salary_base ?? 0),
-        overtime_hours: Number(row.overtime_hours ?? 0),
-        overtime_pay: Number(row.overtime_pay ?? 0),
+        salary_base: Number(row.gaji_pokok ?? 0),
+        overtime_hours: Number(row.jam_lembur ?? 0),
+        overtime_pay: Number(row.lembur ?? 0),
         bonus: Number(row.bonus ?? 0),
-        incentive: Number(row.incentive ?? 0),
-        deductions: Number(row.deductions ?? 0),
-        kasbon_deduction: Number(row.kasbon_deduction ?? 0),
-        absence_deduction: Number(row.absence_deduction ?? 0),
-        total_gross: Number(row.total_gross ?? 0),
-        total_net: Number(row.total_net ?? 0),
+        incentive: Number(row.kuota ?? 0),
+        deductions: Number(row.denda_telat ?? 0),
+        kasbon_deduction: Number(row.kasbon ?? 0),
+        absence_deduction: Number(row.potongan_alpha ?? 0),
+        total_gross: Number(row.total_pendapatan ?? 0),
+        total_net: Number(row.gaji_bersih ?? 0),
         status: row.status,
         paid_at: row.paid_at,
       };
