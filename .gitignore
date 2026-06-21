@@ -50,3 +50,8 @@ migration_report.json
 
 # migration logs
 scripts/logs/
+
+.env*
+
+# nested clone (should not be tracked)
+raos/
