@@ -467,6 +467,7 @@ export default function Sidebar({
         {/* SDM */}
         <div className="px-1">
           <SectionLabel label="SDM" collapsed={collapsed} />
+          <NavItem label="Master Data" href="/master-data"  icon={IC.users}   active={isActive("/master-data")}  collapsed={collapsed} onClick={onClose} sectionType="SDM" />
           <NavItem label="Driver"      href="/drivers"      icon={IC.car}     active={isActive("/drivers")}      collapsed={collapsed} onClick={onClose} sectionType="SDM" />
           <NavItem label="Staff"       href="/staff"        icon={IC.badge}   active={isActive("/staff")}        collapsed={collapsed} onClick={onClose} sectionType="SDM" />
           {showKoordinator && (
