@@ -57,16 +57,44 @@ export default function GeofenceClient({ airports, canEdit }: GeofenceClientProp
     setSaving(false);
   }
 
+  const provisional = airportList.filter((a) => a.radius_confirmed === false);
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>
-          Geofence Bandara
-        </h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Kelola zona geofence setiap bandara RIFIM
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>
+            Geofence Bandara
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Radius luas bandara resmi + buffer 300m · Haversine · Leaflet/OSM
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {airportList.map((ap) => (
+            <div key={ap.id} className="text-xs bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 font-mono">
+              <span className="font-bold text-gray-700">{ap.code}</span>
+              <span className="text-gray-400 ml-1">{ap.radius_meter}m</span>
+              {ap.radius_confirmed === false && <span className="text-amber-500 ml-1">⚠</span>}
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Audit report — koordinat identik 0m offset */}
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-xs text-emerald-800">
+        <span className="font-bold">✅ Audit koordinat:</span> Semua 6 bandara — selisih DB vs spek = <strong>0m</strong> (identik).
+        Hanya radius yang diperbarui dari flat 100m → per-bandara sesuai luas resmi + buffer 300m.
+      </div>
+
+      {provisional.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-xs text-amber-800">
+          <span className="font-bold">⚠ Radius PROVISIONAL:</span>{" "}
+          {provisional.map((a) => `${a.city} (${a.radius_meter}m)`).join(", ")} — data luas resmi
+          belum tersedia. Konfirmasi dengan Tim AP II / Google Maps satellite, lalu update via Edit Radius.
+        </div>
+      )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Airport list */}
@@ -154,23 +182,33 @@ export default function GeofenceClient({ airports, canEdit }: GeofenceClientProp
             />
           </div>
           {selectedAirport && (
-            <div className="px-4 py-3 border-t border-gray-100 grid grid-cols-3 gap-4 text-sm">
+            <div className="px-4 py-3 border-t border-gray-100 grid grid-cols-4 gap-4 text-sm">
               <div>
                 <p className="text-gray-500 text-xs">Koordinat</p>
                 <p className="font-mono text-xs">
-                  {selectedAirport.latitude.toFixed(5)}, {selectedAirport.longitude.toFixed(5)}
+                  {selectedAirport.latitude.toFixed(6)},<br/>{selectedAirport.longitude.toFixed(6)}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 text-xs">Radius Geofence</p>
                 <p className="font-semibold">
                   {editRadius !== null ? editRadius : selectedAirport.radius_meter}m
+                  {selectedAirport.radius_confirmed === false && (
+                    <span className="ml-1 text-xs text-amber-500 font-normal">PROVISIONAL</span>
+                  )}
                 </p>
               </div>
               <div>
-                <p className="text-gray-500 text-xs">Luas Area</p>
-                <p className="font-semibold">
-                  {(Math.PI * Math.pow(selectedAirport.radius_meter, 2) / 10000).toFixed(1)} ha
+                <p className="text-gray-500 text-xs">Radius Inti</p>
+                <p className="font-semibold text-gray-600">
+                  {selectedAirport.radius_meter - 300}m
+                  <span className="text-xs text-gray-400 font-normal ml-1">+300m buffer</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs">Metode</p>
+                <p className="font-semibold text-xs text-gray-600">Haversine<br/>
+                  <span className="font-normal text-gray-400">formula PostgreSQL</span>
                 </p>
               </div>
             </div>

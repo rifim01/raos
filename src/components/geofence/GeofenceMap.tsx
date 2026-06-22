@@ -13,6 +13,7 @@ export type AirportGeo = {
   latitude: number;
   longitude: number;
   radius_meter: number;
+  radius_confirmed?: boolean;
 };
 
 const AIRPORT_COLORS = [
@@ -51,9 +52,14 @@ function AirportCircle({ airport, color, selected, onSelect }: {
           <div className="text-sm">
             <p className="font-bold">{airport.name}</p>
             <p className="text-gray-500">{airport.city} · {airport.code}</p>
-            <p className="text-xs mt-1">Radius geofence: {airport.radius_meter}m</p>
+            <p className="text-xs mt-1">
+              Radius geofence: <strong>{airport.radius_meter}m</strong>
+              {airport.radius_confirmed === false && (
+                <span style={{ color: "#D97706", marginLeft: 4 }}>⚠ PROVISIONAL</span>
+              )}
+            </p>
             <p className="text-xs text-gray-400">
-              {airport.latitude.toFixed(5)}, {airport.longitude.toFixed(5)}
+              {airport.latitude.toFixed(6)}, {airport.longitude.toFixed(6)}
             </p>
           </div>
         </Popup>

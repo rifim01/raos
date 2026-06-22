@@ -526,6 +526,14 @@ export default function Sidebar({
           </div>
         )}
 
+        {/* GEOFENCE */}
+        {showKoordinator && (
+          <div className="px-1">
+            <SectionLabel label="Geofence" collapsed={collapsed} />
+            <NavItem label="Zona Bandara" href="/geofence" icon={IC.mapPinned} active={isActive("/geofence")} collapsed={collapsed} onClick={onClose} sectionType="BANDARA" />
+          </div>
+        )}
+
         {/* AI & TOOLS */}
         <div className="px-1">
           <SectionLabel label="AI & Tools" collapsed={collapsed} />
