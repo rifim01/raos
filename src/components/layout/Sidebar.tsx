@@ -489,6 +489,9 @@ export default function Sidebar({
           <NavItem label="Absensi"      href="/attendance"  icon={IC.clock}      active={isActive("/attendance")}  collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
           <NavItem label="Shift Kerja"  href="/shifts"      icon={IC.calSync}    active={isActive("/shifts")}      collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
           <NavItem label="Pelanggaran"  href="/violations"  icon={IC.alert}      active={isActive("/violations")}  collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+          {showKoordinator && (
+            <NavItem label="ETA Monitoring" href="/eta" icon={IC.clock} active={isActive("/eta")} collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+          )}
         </div>
 
         {/* KEUANGAN */}
@@ -497,7 +500,13 @@ export default function Sidebar({
           <NavItem label="Payroll"         href="/payroll"    icon={IC.banknote} active={isActive("/payroll")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
           <NavItem label="Kas Operasional" href="/finance"    icon={IC.landmark} active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
           <NavItem label="Insentif"        href="/finance"    icon={IC.trophy}   active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          <NavItem label="KPI Staff"       href="/kpi-staff"  icon={IC.clipboardCheck} active={isActive("/kpi-staff")} collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          <NavItem label="KPI Staff"   href="/kpi-staff"   icon={IC.clipboardCheck} active={isActive("/kpi-staff")}   collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          {showKoordinator && (
+            <NavItem label="KPI Driver"  href="/kpi-driver"  icon={IC.trophy}         active={isActive("/kpi-driver")}  collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          )}
+          {showCommandCenter && (
+            <NavItem label="KPI Cabang"  href="/kpi-branch"  icon={IC.barChart}        active={isActive("/kpi-branch")}  collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          )}
         </div>
 
         {/* LAPORAN */}
