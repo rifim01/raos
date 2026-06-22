@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AttendanceClient, { type DailyRecord, type MonthlyRecord } from "./AttendanceClient";
 
+export const dynamic = "force-dynamic";
+
 const WORK_START_HOUR = 7;
 const LATE_GRACE_MINUTES = 15;
 
