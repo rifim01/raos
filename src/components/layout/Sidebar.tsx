@@ -182,6 +182,12 @@ const IC = {
       <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z"/>
     </SI>
   ),
+  mail: (
+    <SI>
+      <rect width="20" height="16" x="2" y="4" rx="2"/>
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+    </SI>
+  ),
   settings: (
     <SI>
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -537,8 +543,9 @@ export default function Sidebar({
         {/* AI & TOOLS */}
         <div className="px-1">
           <SectionLabel label="AI & Tools" collapsed={collapsed} />
-          <NavItem label="Rifim AI"   href="/rifim-ai"   icon={IC.sparkles} active={isActive("/rifim-ai")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
-          <NavItem label="Dokumen"    href="/documents"  icon={IC.folder}   active={isActive("/documents")}  collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <NavItem label="Rifim AI"     href="/rifim-ai"     icon={IC.sparkles} active={isActive("/rifim-ai")}     collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <NavItem label="Surat Keluar" href="/surat-keluar" icon={IC.mail}     active={isActive("/surat-keluar")} collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <NavItem label="Dokumen"      href="/documents"    icon={IC.folder}   active={isActive("/documents")}    collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
           <NavItem label="Pengaturan" href="/settings"   icon={IC.settings} active={isActive("/settings")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
         </div>
 
