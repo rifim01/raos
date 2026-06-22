@@ -526,9 +526,10 @@ export default function Sidebar({
         {showCommandCenter && (
           <div className="px-1">
             <SectionLabel label="Command Center" collapsed={collapsed} />
-            <NavItem label="Command Center" href="/command-center" icon={IC.monitor} active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
-            <NavItem label="Live Tracking"   href="/tracking"       icon={IC.radar}   active={isActive("/tracking")}       collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
-            <NavItem label="Peta Bandara"    href="/command-center" icon={IC.map}     active={isActive("/command-center")} collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Command Center"      href="/command-center"        icon={IC.monitor} active={isActive("/command-center")}        collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Terminal Kedatangan" href="/terminal-kedatangan"   icon={IC.plane}   active={isActive("/terminal-kedatangan")}   collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Live Tracking"       href="/tracking"              icon={IC.radar}   active={isActive("/tracking")}              collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Peta Bandara"        href="/command-center"        icon={IC.map}     active={isActive("/command-center")}        collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
           </div>
         )}
 
