@@ -135,6 +135,13 @@ const IC = {
       <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
     </SI>
   ),
+  clipboardCheck: (
+    <SI>
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+      <path d="m9 14 2 2 4-4"/>
+    </SI>
+  ),
   barChart: (
     <SI>
       <line x1="12" x2="12" y1="20" y2="10"/>
@@ -490,6 +497,7 @@ export default function Sidebar({
           <NavItem label="Payroll"         href="/payroll"    icon={IC.banknote} active={isActive("/payroll")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
           <NavItem label="Kas Operasional" href="/finance"    icon={IC.landmark} active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
           <NavItem label="Insentif"        href="/finance"    icon={IC.trophy}   active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
+          <NavItem label="KPI Staff"       href="/kpi-staff"  icon={IC.clipboardCheck} active={isActive("/kpi-staff")} collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
         </div>
 
         {/* LAPORAN */}
@@ -512,7 +520,7 @@ export default function Sidebar({
         <div className="px-1">
           <SectionLabel label="AI & Tools" collapsed={collapsed} />
           <NavItem label="Rifim AI"   href="/rifim-ai"   icon={IC.sparkles} active={isActive("/rifim-ai")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
-          <NavItem label="Dokumen"    href="/reports"    icon={IC.folder}   active={isActive("/reports")}    collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <NavItem label="Dokumen"    href="/documents"  icon={IC.folder}   active={isActive("/documents")}  collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
           <NavItem label="Pengaturan" href="/settings"   icon={IC.settings} active={isActive("/settings")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
         </div>
 
