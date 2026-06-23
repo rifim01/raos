@@ -2,40 +2,43 @@
 
 :root {
   /* RIFIM Brand */
-  --rifim-red: #E53935;
+  --rifim-red:      #C62828;
   --rifim-red-dark: #B71C1C;
-  --rifim-blue: #2563EB;
-  --rifim-blue-dark: #1D4ED8;
+  --rifim-blue:     #2563EB;
 
-  /* Dark Enterprise Theme */
-  --bg-primary: #0F172A;
-  --bg-secondary: #1E293B;
-  --bg-card: #1E293B;
-  --bg-card-hover: #243447;
-  --bg-elevated: #263348;
-  --border: rgba(148, 163, 184, 0.1);
-  --border-strong: rgba(148, 163, 184, 0.2);
+  /* === RAOS Design System v3 — Dark Navy Command Center === */
+  --bg-primary:    #0B0F1A;
+  --bg-secondary:  #0F1724;
+  --bg-card:       #131D30;
+  --bg-card-hover: #182338;
+  --bg-elevated:   #1C2A44;
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
   /* Text */
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-primary:   #F0F4FF;
+  --text-secondary: #8899BB;
+  --text-muted:     #4A5A78;
 
-  /* Accent */
-  --accent: #2563EB;
-  --accent-glow: rgba(37, 99, 235, 0.2);
-  --success: #10B981;
-  --success-glow: rgba(16, 185, 129, 0.15);
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --danger-glow: rgba(239, 68, 68, 0.15);
+  /* Accents */
+  --accent:       #3B82F6;
+  --accent-cyan:  #06B6D4;
+  --accent-gold:  #FFD300;
+  --accent-glow:  rgba(59,130,246,0.2);
+
+  /* Status */
+  --success:      #22C55E;
+  --success-glow: rgba(34,197,94,0.15);
+  --warning:      #F59E0B;
+  --danger:       #EF4444;
+  --danger-glow:  rgba(239,68,68,0.15);
 
   /* Layout */
-  --sidebar-width: 240px;
-  --sidebar-collapsed-width: 64px;
-  --header-height: 60px;
-  --background: #0F172A;
-  --foreground: #F1F5F9;
+  --sidebar-width:           200px;
+  --sidebar-collapsed-width: 60px;
+  --header-height:           60px;
+  --background: #0B0F1A;
+  --foreground: #F0F4FF;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

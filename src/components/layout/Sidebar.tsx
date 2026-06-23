@@ -5,380 +5,107 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-/* ─── airports ───────────────────────────────────────────────────────────── */
-const AIRPORTS = [
-  { code: "DJB001", city: "Jambi" },
-  { code: "PKU001", city: "Pekanbaru" },
-  { code: "BTH001", city: "Batam" },
-  { code: "BPN001", city: "Balikpapan" },
-  { code: "MDC001", city: "Manado" },
-  { code: "UPG001", city: "Makassar" },
-];
-
-/* ─── micro SVG wrapper ──────────────────────────────────────────────────── */
-function SI({ children, size = 16 }: { children: React.ReactNode; size?: number }) {
+/* ─── Thin inline SVG icons ─────────────────────────────────────────────── */
+function Icon({ d, d2, circle, size = 15 }: { d?: string; d2?: string; circle?: { cx: number; cy: number; r: number }; size?: number }) {
   return (
-    <svg
-      viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-      width={size} height={size} style={{ flexShrink: 0 }}
-    >
-      {children}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" width={size} height={size} style={{ flexShrink: 0 }}>
+      {d  && <path d={d} />}
+      {d2 && <path d={d2} />}
+      {circle && <circle cx={circle.cx} cy={circle.cy} r={circle.r} />}
     </svg>
   );
 }
 
-/* ─── icon library ───────────────────────────────────────────────────────── */
-const IC = {
-  home: (
-    <SI>
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <path d="M9 22V12h6v10"/>
-    </SI>
-  ),
-  users: (
-    <SI>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-    </SI>
-  ),
-  car: (
-    <SI>
-      <path d="M19 17H5a2 2 0 0 1-2-2V9l3-6h12l3 6v6a2 2 0 0 1-2 2z"/>
-      <circle cx="7.5" cy="17.5" r="1.5"/>
-      <circle cx="16.5" cy="17.5" r="1.5"/>
-      <path d="M5 9h14"/>
-    </SI>
-  ),
-  badge: (
-    <SI>
-      <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/>
-      <path d="m9 12 2 2 4-4"/>
-    </SI>
-  ),
-  userCog: (
-    <SI>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <circle cx="19.5" cy="15.5" r="2.5"/>
-      <path d="M19.5 12v1M19.5 18v1M16.6 13.9l.7.7M21.8 17.2l.7.7M16.6 17.2l.7-.7M21.8 13.9l.7-.7"/>
-    </SI>
-  ),
-  plane: (
-    <SI>
-      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2a.8.8 0 0 0-.3 1.4L5 11l-1 3-2 1 1 2 2-1 3-1 3.5 3.5 1.2 4 1.4-.3z"/>
-    </SI>
-  ),
-  mapPin: (
-    <SI>
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </SI>
-  ),
-  mapPinned: (
-    <SI>
-      <path d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0z"/>
-      <circle cx="12" cy="8" r="2"/>
-      <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2M20 12h2M18.66 6.34l-1.41 1.41"/>
-    </SI>
-  ),
-  clock: (
-    <SI>
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M12 6v6l4 2"/>
-    </SI>
-  ),
-  calSync: (
-    <SI>
-      <path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/>
-      <path d="M16 2v4M8 2v4M3 10h5"/>
-      <path d="m17 13-5 5 5 5"/>
-      <path d="M22 16a5 5 0 0 0-5-5"/>
-    </SI>
-  ),
-  alert: (
-    <SI>
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-      <path d="M12 9v4"/><path d="M12 17h.01"/>
-    </SI>
-  ),
-  wallet: (
-    <SI>
-      <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
-      <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
-    </SI>
-  ),
-  banknote: (
-    <SI>
-      <rect width="20" height="12" x="2" y="6" rx="2"/>
-      <circle cx="12" cy="12" r="2"/>
-      <path d="M6 12h.01M18 12h.01"/>
-    </SI>
-  ),
-  landmark: (
-    <SI>
-      <line x1="3" x2="21" y1="22" y2="22"/>
-      <line x1="6" x2="6" y1="18" y2="11"/>
-      <line x1="10" x2="10" y1="18" y2="11"/>
-      <line x1="14" x2="14" y1="18" y2="11"/>
-      <line x1="18" x2="18" y1="18" y2="11"/>
-      <polygon points="12 2 20 7 4 7"/>
-    </SI>
-  ),
-  trophy: (
-    <SI>
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-      <path d="M4 22h16"/>
-      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-      <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-    </SI>
-  ),
-  clipboardCheck: (
-    <SI>
-      <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-      <path d="m9 14 2 2 4-4"/>
-    </SI>
-  ),
-  barChart: (
-    <SI>
-      <line x1="12" x2="12" y1="20" y2="10"/>
-      <line x1="18" x2="18" y1="20" y2="4"/>
-      <line x1="6" x2="6" y1="20" y2="16"/>
-    </SI>
-  ),
-  monitor: (
-    <SI>
-      <rect width="20" height="14" x="2" y="3" rx="2"/>
-      <line x1="8" x2="16" y1="21" y2="21"/>
-      <line x1="12" x2="12" y1="17" y2="21"/>
-    </SI>
-  ),
-  radar: (
-    <SI>
-      <path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/>
-      <path d="M4 6.1a10 10 0 1 0 14.9.97"/>
-      <path d="M12 12 4.93 4.93"/>
-      <circle cx="12" cy="12" r="2"/>
-    </SI>
-  ),
-  map: (
-    <SI>
-      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-      <line x1="9" x2="9" y1="3" y2="18"/>
-      <line x1="15" x2="15" y1="6" y2="21"/>
-    </SI>
-  ),
-  sparkles: (
-    <SI>
-      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-      <path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/>
-    </SI>
-  ),
-  folder: (
-    <SI>
-      <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z"/>
-    </SI>
-  ),
-  mail: (
-    <SI>
-      <rect width="20" height="16" x="2" y="4" rx="2"/>
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-    </SI>
-  ),
-  settings: (
-    <SI>
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </SI>
-  ),
-  chevronDown: (
-    <SI size={13}>
-      <path d="m6 9 6 6 6-6"/>
-    </SI>
-  ),
-  collapseLeft: (
-    <SI size={15}>
-      <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
-    </SI>
-  ),
-  expandRight: (
-    <SI size={15}>
-      <path d="M13 5l7 7-7 7M6 5l7 7-7 7"/>
-    </SI>
-  ),
-  close: (
-    <SI size={15}>
-      <path d="M18 6L6 18M6 6l12 12"/>
-    </SI>
-  ),
+const ICONS = {
+  home:      <Icon d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" d2="M9 22V12h6v10" />,
+  users:     <Icon d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" d2="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" circle={{ cx: 9, cy: 7, r: 4 }} />,
+  car:       <Icon d="M19 17H5a2 2 0 0 1-2-2V9l3-6h12l3 6v6a2 2 0 0 1-2 2z" d2="M5 9h14" />,
+  badge:     <Icon d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" d2="m9 12 2 2 4-4" />,
+  userCog:   <Icon d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" d2="M19.5 12v1M19.5 18v1M16.6 13.9l.7.7M21.8 17.2l.7.7M16.6 17.2l.7-.7M21.8 13.9l.7-.7" circle={{ cx: 9, cy: 7, r: 4 }} />,
+  mapPin:    <Icon d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" circle={{ cx: 12, cy: 10, r: 3 }} />,
+  list:      <Icon d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
+  clock:     <Icon d="M12 6v6l4 2" circle={{ cx: 12, cy: 12, r: 10 }} />,
+  calSync:   <Icon d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5M16 2v4M8 2v4M3 10h5M17 13-5 5 5 5" d2="M22 16a5 5 0 0 0-5-5" />,
+  alert:     <Icon d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" d2="M12 9v4M12 17h.01" />,
+  eta:       <Icon d="M12 6v6l4 2" circle={{ cx: 12, cy: 12, r: 10 }} />,
+  wallet:    <Icon d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" d2="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />,
+  landmark:  <Icon d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2 4 7h16z" />,
+  gift:      <Icon d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />,
+  barChart:  <Icon d="M12 20V10M18 20V4M6 20v-4" />,
+  trophy:    <Icon d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z" />,
+  clipboard: <Icon d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" d2="m9 14 2 2 4-4" />,
+  laporan:   <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" d2="M14 2v6h6M16 13H8M16 17H8M10 9H8" />,
+  radar:     <Icon d="M19.07 4.93A10 10 0 0 0 6.99 3.34M4 6.1a10 10 0 1 0 14.9.97M12 12 4.93 4.93" circle={{ cx: 12, cy: 12, r: 2 }} />,
+  map:       <Icon d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6zM9 3v15M15 6v15" />,
+  monitor:   <Icon d="M8 21h8M12 17v4" d2="" />,
+  terminal:  <Icon d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2a.8.8 0 0 0-.3 1.4L5 11l-1 3-2 1 1 2 2-1 3-1 3.5 3.5 1.2 4 1.4-.3z" />,
+  sparkles:  <Icon d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />,
+  folder:    <Icon d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />,
+  mail:      <Icon d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" d2="m22 6-10 7L2 6" />,
+  settings:  <Icon d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" circle={{ cx: 12, cy: 12, r: 3 }} />,
+  chevron:   <Icon d="m6 9 6 6 6-6" size={12} />,
+  chevLeft:  <Icon d="m15 18-6-6 6-6" size={13} />,
+  chevRight: <Icon d="m9 18 6-6-6-6" size={13} />,
+  geofence:  <Icon d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0z" circle={{ cx: 12, cy: 8, r: 2 }} />,
 };
 
-/* ─── section label ──────────────────────────────────────────────────────── */
+/* ─── Nav section header ─────────────────────────────────────────────────── */
 function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="mx-3 my-3 h-px bg-slate-100" />;
+  if (collapsed) return <div className="mx-3 my-2 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />;
   return (
-    <p className="px-4 pt-5 pb-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase text-slate-400 select-none">
+    <p className="px-4 pt-5 pb-1.5 text-[9.5px] font-extrabold tracking-[0.16em] uppercase select-none"
+      style={{ color: "var(--text-muted)" }}>
       {label}
     </p>
   );
 }
 
-/* ─── single nav item ────────────────────────────────────────────────────── */
+/* ─── Single nav item ────────────────────────────────────────────────────── */
 function NavItem({
-  label, href, icon, active, collapsed, indent, onClick, sectionType,
+  label, href, icon, active, collapsed, indent, onClick, badge,
 }: {
   label: string; href: string; icon: React.ReactNode;
   active: boolean; collapsed: boolean; indent?: boolean; onClick?: () => void;
-  sectionType?: string;
+  badge?: string;
 }) {
-  // PENGATURAN BUBBLE WARNA DYNAMIC: Ikon dibungkus background pastel premium berbeda rumpun
-  const getBubbleColor = () => {
-    if (active) return "bg-white/35 text-black ring-1 ring-white/20";
-    switch (sectionType) {
-      case "SDM": return "bg-blue-50 text-blue-600 group-hover:bg-blue-100/80";
-      case "BANDARA": return "bg-amber-50 text-amber-600 group-hover:bg-amber-100/80";
-      case "OPERASIONAL": return "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100/80";
-      case "KEUANGAN": return "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100/80";
-      case "LAPORAN": return "bg-orange-50 text-orange-600 group-hover:bg-orange-100/80";
-      case "COMMAND": return "bg-purple-50 text-purple-600 group-hover:bg-purple-100/80";
-      case "TOOLS": return "bg-pink-50 text-pink-600 group-hover:bg-pink-100/80";
-      default: return "bg-slate-100 text-slate-600 group-hover:bg-slate-200/80";
-    }
-  };
-
   return (
     <Link
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
       className={cn(
-        "group relative flex items-center transition-all duration-200 mx-2.5 my-1 rounded-xl",
-        collapsed ? "px-0 py-2 justify-center" : cn("py-1.5 gap-3.5", indent ? "pl-9 pr-3" : "px-2.5"),
+        "group relative flex items-center gap-2.5 mx-2 my-0.5 rounded-lg transition-all duration-150 select-none",
+        collapsed ? "px-0 py-2.5 justify-center" : cn("py-2 px-3", indent && "pl-8"),
         active
-          ? "bg-[#FFD300] text-black shadow-[0_4px_20px_rgba(255,211,0,0.35)] scale-[1.02] border border-[#FFE042]"
-          : "bg-transparent text-slate-600 hover:bg-slate-50 hover:text-black"
+          ? "text-white font-bold"
+          : "font-medium hover:text-white"
       )}
+      style={{
+        background: active ? "rgba(59,130,246,0.18)" : "transparent",
+        color: active ? "#FFFFFF" : "var(--text-secondary)",
+        borderLeft: active ? "2px solid #3B82F6" : "2px solid transparent",
+      }}
     >
-      {/* MODEL BUBBLE ICON: Gelembung lingkaran/kotak lembut pengapit ikon */}
-      <span className={cn(
-        "w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300 shadow-sm",
-        getBubbleColor()
-      )}>
+      <span className={cn("flex-shrink-0 transition-colors", active ? "text-[#3B82F6]" : "text-[var(--text-muted)] group-hover:text-white/70")}>
         {icon}
       </span>
-
-      {/* Label Menu */}
       {!collapsed && (
-        <span className={cn("text-[13.5px] tracking-wide truncate", active ? "font-extrabold text-black" : "font-semibold text-slate-700 group-hover:text-black")}>
-          {label}
+        <span className="text-[13px] truncate leading-none flex-1">{label}</span>
+      )}
+      {!collapsed && badge && (
+        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
+          style={{ background: "rgba(59,130,246,0.2)", color: "#60A5FA" }}>
+          {badge}
         </span>
       )}
-
-      {/* Active pip sub-menu */}
-      {!collapsed && active && indent && (
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-black/40" />
-      )}
-
-      {/* Collapsed tooltip */}
       {collapsed && (
-        <span className="pointer-events-none absolute left-full ml-4 z-50 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white shadow-2xl opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-lg px-3 py-2 text-[11px] font-semibold shadow-2xl opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ background: "#1C2A44", color: "#F0F4FF", border: "1px solid rgba(255,255,255,0.1)" }}>
           {label}
         </span>
       )}
     </Link>
-  );
-}
-
-/* ─── bandara expandable ─────────────────────────────────────────────────── */
-function BandaraSection({
-  airports, collapsed, open, onToggle, isActive, onClose,
-}: {
-  airports: typeof AIRPORTS;
-  collapsed: boolean; open: boolean;
-  onToggle: () => void;
-  isActive: (href: string) => boolean;
-  onClose?: () => void;
-}) {
-  if (collapsed) {
-    return (
-      <>
-        {airports.map((a) => (
-          <Link
-            key={a.code}
-            href={`/airports/${a.code}`}
-            onClick={onClose}
-            title={a.city}
-            className={cn(
-              "group relative flex items-center justify-center mx-2.5 py-2.5 rounded-xl transition-all duration-200",
-              isActive(`/airports/${a.code}`)
-                ? "bg-[#FFD300] text-black shadow-[0_4px_16px_rgba(255,211,0,0.3)]"
-                : "text-slate-400 hover:bg-slate-50 hover:text-slate-900"
-            )}
-          >
-            <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-100">
-              {IC.mapPin}
-            </span>
-            <span className="pointer-events-none absolute left-full ml-4 z-50 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white shadow-2xl opacity-0 transition-opacity group-hover:opacity-100">
-              {a.city}
-            </span>
-          </Link>
-        ))}
-      </>
-    );
-  }
-
-  const isAnyAirportActive = airports.some((a) => isActive(`/airports/${a.code}`));
-
-  return (
-    <>
-      <button
-        onClick={onToggle}
-        className={cn(
-          "group w-[calc(100%-20px)] mx-2.5 flex items-center gap-3 px-2.5 py-1.5 rounded-xl transition-all duration-200 text-left outline-none",
-          isAnyAirportActive
-            ? "text-amber-900 bg-amber-50 font-bold border border-amber-100"
-            : "text-slate-600 hover:bg-slate-50 hover:text-black"
-        )}
-      >
-        <span className={cn("w-8 h-8 flex items-center justify-center rounded-xl transition-all shadow-sm", 
-          isAnyAirportActive ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-600 group-hover:bg-amber-100"
-        )}>
-          {IC.plane}
-        </span>
-        <span className="flex-1 text-[13.5px] font-semibold tracking-wide">Bandara</span>
-        <span className={cn("flex-shrink-0 text-slate-400 transition-transform duration-200", open ? "rotate-180 text-slate-700" : "")}>
-          {IC.chevronDown}
-        </span>
-      </button>
-
-      {open && (
-        <div className="mt-1 mb-1 flex flex-col pl-4 ml-6 border-l-2 border-slate-100 space-y-0.5">
-          {airports.map((a) => {
-            const href = `/airports/${a.code}`;
-            const active = isActive(href);
-            return (
-              <Link
-                key={a.code}
-                href={href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 pl-3 pr-3 py-2 rounded-xl transition-all duration-150 text-[12.5px]",
-                  active
-                    ? "bg-[#FFD300] text-black font-extrabold shadow-sm"
-                    : "text-slate-500 hover:bg-[#FFFBE6] hover:text-slate-900 font-semibold"
-                )}
-              >
-                <span className={cn("w-1.5 h-1.5 rounded-full transition-transform duration-150", active ? "bg-black scale-110" : "bg-slate-300")} />
-                {a.city}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </>
   );
 }
 
@@ -393,143 +120,123 @@ interface SidebarProps {
   airportCode?: string | null;
 }
 
-export default function Sidebar({
-  onClose,
-  collapsed = false,
-  onToggleCollapse,
-  userRoleLevel = 2,
-  airportCode,
-}: SidebarProps) {
+export default function Sidebar({ onClose, collapsed = false, onToggleCollapse, userRoleLevel = 2 }: SidebarProps) {
   const pathname = usePathname();
-  const [bandaraOpen, setBandaraOpen] = useState(pathname.startsWith("/airports"));
+  const [antriOpen, setAntriOpen] = useState(false);
+  void antriOpen;
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  const airportItems =
-    userRoleLevel >= 4
-      ? AIRPORTS
-      : userRoleLevel === 3 && airportCode
-      ? AIRPORTS.filter((a) => a.code === airportCode)
-      : [];
-
-  const showCommandCenter = userRoleLevel >= 4;
   const showKoordinator   = userRoleLevel >= 3;
+  const showCommandCenter = userRoleLevel >= 4;
 
   return (
     <aside
-      className="h-full flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out shadow-[4px_0_30px_rgba(15,23,42,0.02)]"
+      className="h-full flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out"
       style={{
         width: collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-width)",
-        background: "#FFFFFF",
-        borderRight: "1px solid #F8FAFC",
+        background: "var(--bg-secondary)",
+        borderRight: "1px solid var(--border)",
       }}
     >
-      {/* ── Logo ─────────────────────────────────────────────────── */}
+      {/* ── Logo ─────────────────────────────────────── */}
       <div
         className={cn(
-          "flex items-center border-b border-slate-50 flex-shrink-0 transition-all duration-300",
-          collapsed ? "px-3 py-4 justify-center" : "px-5 py-4 gap-3"
+          "flex items-center border-b flex-shrink-0 transition-all duration-300",
+          collapsed ? "px-3 py-4 justify-center flex-col gap-1" : "px-4 py-4 gap-3"
         )}
-        style={{ height: "var(--header-height)" }}
+        style={{ height: "var(--header-height)", borderColor: "var(--border)" }}
       >
-        <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-slate-100 transition-transform duration-300 hover:scale-105 bg-slate-50 p-0.5">
-          <img src="/icons/icon-512.png" alt="RIFIM" className="w-full h-full object-cover rounded-lg" />
+        <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/10">
+          <img src="/icons/icon-512.png" alt="RAOS" className="w-full h-full object-cover" />
         </div>
-
         {!collapsed && (
-          <div className="flex-1 min-w-0 flex flex-col justify-center pl-0.5">
-            <p className="text-slate-900 font-black text-[14.5px] leading-none tracking-tight">RIFIM</p>
-            <p className="text-slate-400 text-[9px] font-extrabold tracking-[0.18em] uppercase mt-1">Airport OS</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-black text-[15px] leading-none tracking-tight">RAOS</p>
+            <p className="text-[8.5px] font-bold tracking-[0.12em] uppercase mt-0.5" style={{ color: "var(--text-muted)" }}>
+              BY RIFIM × MAXIM
+            </p>
           </div>
         )}
-
         {!collapsed && onClose && (
-          <button onClick={onClose} className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 outline-none">{IC.close}</button>
+          <button onClick={onClose} className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: "var(--text-muted)" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width={16} height={16}>
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         )}
-
         {!collapsed && onToggleCollapse && (
-          <button onClick={onToggleCollapse} className="hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 outline-none">{IC.collapseLeft}</button>
+          <button onClick={onToggleCollapse} className="hidden lg:flex p-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: "var(--text-muted)" }}>
+            {ICONS.chevLeft}
+          </button>
+        )}
+        {collapsed && onToggleCollapse && (
+          <button onClick={onToggleCollapse} className="hidden lg:flex p-1 rounded-lg hover:bg-white/5 transition-colors" style={{ color: "var(--text-muted)" }}>
+            {ICONS.chevRight}
+          </button>
         )}
       </div>
 
-      {collapsed && onToggleCollapse && (
-        <button onClick={onToggleCollapse} className="hidden lg:flex mx-auto mt-4 mb-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 justify-center outline-none">{IC.expandRight}</button>
-      )}
+      {/* ── Navigation ─────────────────────────────────── */}
+      <nav className="flex-1 overflow-y-auto py-2" style={{ scrollbarWidth: "none" }}>
 
-      {/* ── Navigation (Scrollable Bubble Grid) ─────────────────────── */}
-      <nav
-        className="flex-1 overflow-y-auto py-3 space-y-0.5 pr-1 select-none"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#F1F5F9 transparent" }}
-      >
         {/* DASHBOARD */}
         <div className="px-1">
-          <NavItem
-            label="Dashboard" href="/" icon={IC.home}
-            active={isActive("/")} collapsed={collapsed} onClick={onClose} sectionType="DASHBOARD"
-          />
+          <NavItem label="Dashboard" href="/" icon={ICONS.home} active={isActive("/")} collapsed={collapsed} onClick={onClose} />
         </div>
 
-        {/* SDM */}
+        {/* MASTER DATA */}
         <div className="px-1">
-          <SectionLabel label="SDM" collapsed={collapsed} />
-          <NavItem label="Master Data" href="/master-data"  icon={IC.users}   active={isActive("/master-data")}  collapsed={collapsed} onClick={onClose} sectionType="SDM" />
-          <NavItem label="Driver"      href="/drivers"      icon={IC.car}     active={isActive("/drivers")}      collapsed={collapsed} onClick={onClose} sectionType="SDM" />
-          <NavItem label="Staff"       href="/staff"        icon={IC.badge}   active={isActive("/staff")}        collapsed={collapsed} onClick={onClose} sectionType="SDM" />
+          <SectionLabel label="Master Data" collapsed={collapsed} />
+          <NavItem label="Driver"      href="/drivers"      icon={ICONS.car}     active={isActive("/drivers")}      collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Staff"       href="/staff"        icon={ICONS.badge}   active={isActive("/staff")}        collapsed={collapsed} onClick={onClose} />
           {showKoordinator && (
-            <NavItem label="Koordinator" href="/coordinators" icon={IC.userCog} active={isActive("/coordinators")} collapsed={collapsed} onClick={onClose} sectionType="SDM" />
+            <NavItem label="Koordinator" href="/coordinators" icon={ICONS.userCog} active={isActive("/coordinators")} collapsed={collapsed} onClick={onClose} />
           )}
         </div>
 
-        {/* BANDARA */}
-        {airportItems.length > 0 && (
-          <div className="px-1">
-            <SectionLabel label="Bandara" collapsed={collapsed} />
-            <BandaraSection airports={airportItems} collapsed={collapsed} open={bandaraOpen} onToggle={() => setBandaraOpen((o) => !o)} isActive={isActive} onClose={onClose} />
-          </div>
-        )}
-
-        {/* OPERASIONAL */}
+        {/* BANDARA (Operasional) */}
         <div className="px-1">
-          <SectionLabel label="Operasional" collapsed={collapsed} />
-          <NavItem label="Pickup Point" href="/pickup"      icon={IC.mapPinned}  active={isActive("/pickup")}      collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
-          <NavItem label="Absensi"      href="/attendance"  icon={IC.clock}      active={isActive("/attendance")}  collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
-          <NavItem label="Shift Kerja"  href="/shifts"      icon={IC.calSync}    active={isActive("/shifts")}      collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
-          <NavItem label="Pelanggaran"  href="/violations"  icon={IC.alert}      active={isActive("/violations")}  collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+          <SectionLabel label="Bandara" collapsed={collapsed} />
+          <NavItem label="Pickup Point"   href="/pickup"      icon={ICONS.mapPin}   active={isActive("/pickup")}      collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Antrian"        href="/antrian"     icon={ICONS.list}     active={isActive("/antrian")}     collapsed={collapsed} onClick={onClose} badge="BARU" />
+          <NavItem label="Absensi"        href="/attendance"  icon={ICONS.clock}    active={isActive("/attendance")}  collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Shift Kerja"    href="/shifts"      icon={ICONS.calSync}  active={isActive("/shifts")}      collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Pelanggaran"    href="/violations"  icon={ICONS.alert}    active={isActive("/violations")}  collapsed={collapsed} onClick={onClose} />
           {showKoordinator && (
-            <NavItem label="ETA Monitoring" href="/eta" icon={IC.clock} active={isActive("/eta")} collapsed={collapsed} onClick={onClose} sectionType="OPERASIONAL" />
+            <NavItem label="ETA Monitoring" href="/eta" icon={ICONS.eta} active={isActive("/eta")} collapsed={collapsed} onClick={onClose} />
           )}
         </div>
 
         {/* KEUANGAN */}
         <div className="px-1">
           <SectionLabel label="Keuangan" collapsed={collapsed} />
-          <NavItem label="Payroll"         href="/payroll"    icon={IC.banknote} active={isActive("/payroll")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          <NavItem label="Kas Operasional" href="/finance"    icon={IC.landmark} active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          <NavItem label="Insentif"        href="/finance"    icon={IC.trophy}   active={isActive("/finance")}    collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          <NavItem label="KPI Staff"   href="/kpi-staff"   icon={IC.clipboardCheck} active={isActive("/kpi-staff")}   collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          {showKoordinator && (
-            <NavItem label="KPI Driver"  href="/kpi-driver"  icon={IC.trophy}         active={isActive("/kpi-driver")}  collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          )}
-          {showCommandCenter && (
-            <NavItem label="KPI Cabang"  href="/kpi-branch"  icon={IC.barChart}        active={isActive("/kpi-branch")}  collapsed={collapsed} onClick={onClose} sectionType="KEUANGAN" />
-          )}
+          <NavItem label="Payroll"         href="/payroll"  icon={ICONS.wallet}   active={isActive("/payroll")}  collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Kas Operasional" href="/finance"  icon={ICONS.landmark} active={isActive("/finance")}  collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Insentif"        href="/insentif" icon={ICONS.gift}     active={isActive("/insentif")} collapsed={collapsed} onClick={onClose} />
         </div>
 
-        {/* LAPORAN */}
+        {/* KPI & ANALYTICS */}
         <div className="px-1">
-          <SectionLabel label="Laporan" collapsed={collapsed} />
-          <NavItem label="Laporan" href="/reports" icon={IC.barChart} active={isActive("/reports")} collapsed={collapsed} onClick={onClose} sectionType="LAPORAN" />
+          <SectionLabel label="KPI & Analytics" collapsed={collapsed} />
+          <NavItem label="KPI Staff"  href="/kpi-staff"   icon={ICONS.clipboard} active={isActive("/kpi-staff")}   collapsed={collapsed} onClick={onClose} />
+          {showKoordinator && (
+            <NavItem label="KPI Driver" href="/kpi-driver" icon={ICONS.trophy} active={isActive("/kpi-driver")} collapsed={collapsed} onClick={onClose} />
+          )}
+          {showCommandCenter && (
+            <NavItem label="KPI Cabang" href="/kpi-branch" icon={ICONS.barChart} active={isActive("/kpi-branch")} collapsed={collapsed} onClick={onClose} />
+          )}
+          <NavItem label="Laporan" href="/reports" icon={ICONS.laporan} active={isActive("/reports")} collapsed={collapsed} onClick={onClose} />
         </div>
 
         {/* COMMAND CENTER */}
         {showCommandCenter && (
           <div className="px-1">
             <SectionLabel label="Command Center" collapsed={collapsed} />
-            <NavItem label="Command Center"      href="/command-center"        icon={IC.monitor} active={isActive("/command-center")}        collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
-            <NavItem label="Terminal Kedatangan" href="/terminal-kedatangan"   icon={IC.plane}   active={isActive("/terminal-kedatangan")}   collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
-            <NavItem label="Live Tracking"       href="/tracking"              icon={IC.radar}   active={isActive("/tracking")}              collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
-            <NavItem label="Peta Bandara"        href="/command-center"        icon={IC.map}     active={isActive("/command-center")}        collapsed={collapsed} onClick={onClose} sectionType="COMMAND" />
+            <NavItem label="Terminal Kedatangan" href="/terminal-kedatangan" icon={ICONS.terminal} active={isActive("/terminal-kedatangan")} collapsed={collapsed} onClick={onClose} />
+            <NavItem label="Live Tracking"       href="/tracking"            icon={ICONS.radar}    active={isActive("/tracking")}            collapsed={collapsed} onClick={onClose} />
+            <NavItem label="Peta Bandara"        href="/peta-bandara"        icon={ICONS.map}      active={isActive("/peta-bandara")}        collapsed={collapsed} onClick={onClose} />
+            <NavItem label="Command Center"      href="/command-center"      icon={ICONS.monitor}  active={isActive("/command-center")}      collapsed={collapsed} onClick={onClose} />
           </div>
         )}
 
@@ -537,29 +244,28 @@ export default function Sidebar({
         {showKoordinator && (
           <div className="px-1">
             <SectionLabel label="Geofence" collapsed={collapsed} />
-            <NavItem label="Zona Bandara" href="/geofence" icon={IC.mapPinned} active={isActive("/geofence")} collapsed={collapsed} onClick={onClose} sectionType="BANDARA" />
+            <NavItem label="Zona Bandara" href="/geofence" icon={ICONS.geofence} active={isActive("/geofence")} collapsed={collapsed} onClick={onClose} />
           </div>
         )}
 
-        {/* AI & TOOLS */}
+        {/* TOOLS */}
         <div className="px-1">
-          <SectionLabel label="AI & Tools" collapsed={collapsed} />
-          <NavItem label="Rifim AI"     href="/rifim-ai"     icon={IC.sparkles} active={isActive("/rifim-ai")}     collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
-          <NavItem label="Surat Keluar" href="/surat-keluar" icon={IC.mail}     active={isActive("/surat-keluar")} collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
-          <NavItem label="Dokumen"      href="/documents"    icon={IC.folder}   active={isActive("/documents")}    collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
-          <NavItem label="Pengaturan" href="/settings"   icon={IC.settings} active={isActive("/settings")}   collapsed={collapsed} onClick={onClose} sectionType="TOOLS" />
+          <SectionLabel label="Tools" collapsed={collapsed} />
+          <NavItem label="Rifim AI"     href="/rifim-ai"     icon={ICONS.sparkles} active={isActive("/rifim-ai")}     collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Surat Keluar" href="/surat-keluar" icon={ICONS.mail}     active={isActive("/surat-keluar")} collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Dokumen"      href="/documents"    icon={ICONS.folder}   active={isActive("/documents")}    collapsed={collapsed} onClick={onClose} />
+          <NavItem label="Pengaturan"   href="/settings"     icon={ICONS.settings} active={isActive("/settings")}    collapsed={collapsed} onClick={onClose} />
         </div>
 
-        <div className="h-6" />
+        <div className="h-4" />
       </nav>
 
-      {/* ── Footer ───────────────────────────────────────────────── */}
+      {/* ── Footer ─────────────────────────────────────── */}
       {!collapsed && (
-        <div className="px-5 py-3.5 flex-shrink-0 bg-slate-50/40" style={{ borderTop: "1px solid #F8FAFC" }}>
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-            <p className="text-slate-400 text-[9px] font-extrabold tracking-[0.1em] uppercase truncate select-none">PT RIFIM INTERNATIONAL GEMILANG</p>
-          </div>
+        <div className="px-4 py-3 flex-shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: "var(--text-muted)" }}>
+            RAOS v3.0.1 · SECURED
+          </p>
         </div>
       )}
     </aside>
