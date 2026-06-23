@@ -30,7 +30,7 @@ export default function AppShell({
   const [selectedAirport, setSelectedAirport] = useState("ALL");
 
   return (
-    <div className="flex h-full overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+    <div className="flex h-full overflow-hidden" style={{ background: "transparent" }}>
       {/* 2. Selipkan Service Worker Activator di baris teratas wrapper */}
       <PwaRegister />
 
@@ -68,7 +68,7 @@ export default function AppShell({
           selectedAirport={selectedAirport}
           onAirportChange={setSelectedAirport}
         />
-        <main className="flex-1 overflow-y-auto pb-28 lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-28 lg:pb-0" style={{ background: "transparent" }}>
           <div className="p-4 lg:p-6 max-w-[1600px] mx-auto animate-fade-in">
             {children}
           </div>

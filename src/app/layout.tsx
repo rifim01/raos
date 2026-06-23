@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-// 1. SILAKAN CEK: Baris impor baru untuk memanggil komponen melayang global
 import FloatingCommandCenter from "@/components/FloatingCommandCenter";
+import AppBackground from "@/components/layout/AppBackground";
 
 export const metadata: Metadata = {
   title: "RAOS - RIFIM Airport Operating System",
@@ -38,10 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="RAOS" />
       </head>
       <body className="h-full">
-        {/* Seluruh halaman dan tab dashboard utama di-render di sini */}
-        {children}
-        
-        {/* 2. SILAKAN CEK: Diselipkan di sini agar otomatis melayang di setiap tab halaman */}
+        {/* Branding background layer — fixed, behind all content, excludes auth routes */}
+        <AppBackground />
+        {/* z-index 1 ensures app shell renders above the background */}
+        <div className="relative h-full" style={{ zIndex: 1 }}>
+          {children}
+        </div>
         <FloatingCommandCenter />
       </body>
     </html>
