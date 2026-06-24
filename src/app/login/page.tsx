@@ -23,10 +23,24 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('email or password')) {
+        setError('Email atau password salah.');
+      } else if (msg.includes('confirmed')) {
+        setError('Email belum dikonfirmasi. Hubungi administrator.');
+      } else if (msg.includes('too many') || msg.includes('rate limit')) {
+        setError('Terlalu banyak percobaan login. Coba lagi nanti.');
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setError('Gagal terhubung ke server. Periksa koneksi internet.');
+      } else if (msg === 'supabase_not_configured') {
+        setError('Konfigurasi server belum lengkap. Hubungi administrator.');
+      } else {
+        setError(`Login gagal: ${error.message}`);
+      }
       setLoading(false);
     } else {
       router.push("/");
+      router.refresh();
     }
   }
 
